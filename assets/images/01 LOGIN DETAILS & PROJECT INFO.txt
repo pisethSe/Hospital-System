@@ -1,0 +1,4 @@
+**Admin Login **
+
+Email   : admin@hospital.com
+Password: admin123
