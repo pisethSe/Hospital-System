@@ -1,0 +1,57 @@
+# Hospital System — Cline rules
+
+## What this project is
+
+Hospital Management System: React 18 + Tailwind CSS v4 frontend (`frontend/`),
+Laravel 11 API backend (`backend/`), MySQL database. Frontend and backend
+talk over `/api/*` (Vite proxies to `http://localhost:8000` in development).
+
+## Hard rules — do not break these
+
+1. **Never modify `backend/` code.** The business logic, algorithms and
+   workflow were preserved from the original system on purpose:
+   - Passwords: `sha1(md5($password))` (`app/Support/HisPassword.php`)
+   - Record numbers: `substr(str_shuffle($charset), 1, $length)`
+     (`app/Support/HisCode.php`)
+   - Doctors sign in by doctor ID (`doc_number`), admins by email
+   - Discharge sets `pat_discharge_status` + `pat_walk_out_date`
+   - All 18 `his_*` tables keep their original column names
+2. **Never modify the `DATABASE FILE/` dump.** It is the legacy reference
+   schema and can be imported directly.
+3. **Frontend work only** unless the user explicitly asks otherwise. API
+   contracts (routes, request/response shapes) are fixed — build the UI
+   against them, do not change the backend to fit the UI.
+
+## Running the project
+
+Node/npm are not installed globally on this machine. A portable Node.js
+lives in the home folder — always run commands with it on PATH:
+
+```bash
+export PATH="$HOME/hospital-tools/node-v20.18.1-darwin-arm64/bin:$PATH"
+```
+
+Frontend dev server:
+
+```bash
+cd frontend && npm run dev     # http://localhost:5173
+```
+
+Backend (needs PHP 8.2+, Composer, MySQL installed first):
+
+```bash
+cd backend && php artisan serve    # http://localhost:8000
+```
+
+## Design system
+
+The UI follows a "chart room" direction: light clinical surfaces, hairline
+borders, pen-ink text, deep scrub-teal primary used only for actions and
+active states. IBM Plex Sans for text; IBM Plex Mono strictly for record
+codes (patient/lab/surgery numbers). Semantic tokens only (`bg-primary`,
+`text-muted-foreground`) — never raw hex values. Components come from
+shadcn/ui (Base UI build) in `frontend/src/components/ui/` — compose them,
+do not hand-roll styled divs.
+
+Skills for UI work live in `.agents/skills/` (shadcn, interface-design).
+Read them before changing the design.

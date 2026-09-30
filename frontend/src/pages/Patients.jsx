@@ -1,7 +1,48 @@
 import { useState } from 'react'
-import { useAuth } from '../context/AuthContext'
-import { errorMessage, ErrorAlert, Field, inputClass, Modal, PageHeader, Spinner, useApi } from '../components/ui'
-import api from '../api/client'
+import { useAuth } from '@/context/AuthContext'
+import api from '@/api/client'
+import {
+  ConfirmDialog,
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  PageHeader,
+  RecordCode,
+  StatCard,
+  errorMessage,
+  useApi,
+} from '@/components/ui'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Skeleton } from '@/components/ui/skeleton'
+import { toast } from 'sonner'
+import { CircleUserRound, Search } from 'lucide-react'
 
 const emptyForm = {
   pat_fname: '',
@@ -25,11 +66,13 @@ export default function Patients() {
     `/patients?search=${encodeURIComponent(search)}&status=${status}&page=${page}&per_page=10`,
   )
 
-  const [modal, setModal] = useState(null) // 'add' | 'edit' | null
+  const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [busy, setBusy] = useState(false)
-  const [alert, setAlert] = useState(null)
+
+  const [confirm, setConfirm] = useState(null) // { kind: 'discharge' | 'delete', patient }
+  const [confirmBusy, setConfirmBusy] = useState(false)
 
   const patients = data?.data?.data || []
   const meta = data?.data
@@ -37,7 +80,7 @@ export default function Patients() {
   const openAdd = () => {
     setForm(emptyForm)
     setEditing(null)
-    setModal('add')
+    setDialogOpen(true)
   }
 
   const openEdit = (p) => {
@@ -53,45 +96,48 @@ export default function Patients() {
       pat_ailment: p.pat_ailment || '',
       pat_room_number: p.pat_room_number || '',
     })
-    setModal('edit')
+    setDialogOpen(true)
   }
 
   const save = async (e) => {
     e.preventDefault()
     setBusy(true)
-    setAlert(null)
     try {
       if (editing) {
         await api.put(`/patients/${editing.pat_id}`, form)
+        toast.success('Patient details updated')
       } else {
         await api.post('/patients', form)
+        toast.success('Patient registered', {
+          description: `${form.pat_fname} ${form.pat_lname} was added to the books.`,
+        })
       }
-      setModal(null)
+      setDialogOpen(false)
       reload()
     } catch (err) {
-      setAlert(errorMessage(err))
+      toast.error(errorMessage(err))
     } finally {
       setBusy(false)
     }
   }
 
-  const discharge = async (p) => {
-    if (!window.confirm(`Discharge ${`${p.pat_fname} ${p.pat_lname}`.trim()}?`)) return
+  const runConfirm = async () => {
+    if (!confirm) return
+    setConfirmBusy(true)
     try {
-      await api.post(`/patients/${p.pat_id}/discharge`)
+      if (confirm.kind === 'discharge') {
+        await api.post(`/patients/${confirm.patient.pat_id}/discharge`)
+        toast.success('Patient discharged')
+      } else {
+        await api.delete(`/patients/${confirm.patient.pat_id}`)
+        toast.success('Patient removed')
+      }
+      setConfirm(null)
       reload()
     } catch (err) {
-      window.alert(errorMessage(err))
-    }
-  }
-
-  const remove = async (p) => {
-    if (!window.confirm(`Delete patient ${p.pat_number}? This cannot be undone.`)) return
-    try {
-      await api.delete(`/patients/${p.pat_id}`)
-      reload()
-    } catch (err) {
-      window.alert(errorMessage(err))
+      toast.error(errorMessage(err))
+    } finally {
+      setConfirmBusy(false)
     }
   }
 
@@ -99,202 +145,306 @@ export default function Patients() {
     <>
       <PageHeader
         title="Patients"
-        subtitle="Registered patients, rooms and discharge records."
+        description="Everyone on the books — registered, in a ward, or discharged."
         action={
           isAdmin && (
-            <button
-              onClick={openAdd}
-              className="rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-500"
-            >
-              + Register patient
-            </button>
+            <Button onClick={openAdd}>Register patient</Button>
           )
         }
       />
 
-      <ErrorAlert message={alert} />
-
-      {/* Filters */}
-      <div className="mb-4 flex flex-wrap gap-3">
-        <input
-          type="search"
-          placeholder="Search name, number or ailment…"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value)
-            setPage(1)
-          }}
-          className={`${inputClass} max-w-xs`}
-        />
-        <select
-          value={status}
-          onChange={(e) => {
-            setStatus(e.target.value)
-            setPage(1)
-          }}
-          className={`${inputClass} max-w-[180px]`}
-        >
-          <option value="">All patients</option>
-          <option value="active">Active only</option>
-          <option value="discharged">Discharged only</option>
-        </select>
+      <div className="mt-6 grid gap-4 sm:grid-cols-3">
+        <StatCard label="Showing" value={meta?.total ?? '–'} hint="records match the current filter" />
+        <StatCard label="Page" value={`${meta?.current_page ?? '–'} of ${meta?.last_page ?? '–'}`} />
+        <StatCard label="View" value={status === 'active' ? 'Active' : status === 'discharged' ? 'Discharged' : 'All'} />
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-16">
-          <Spinner className="h-7 w-7" />
+      {/* Filters */}
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        <div className="relative w-full max-w-xs">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search name, record number or ailment"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setPage(1)
+            }}
+            className="pl-8"
+          />
         </div>
-      ) : error ? (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">
-          {error}
-        </div>
-      ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50">
-                <tr className="text-xs uppercase tracking-wide text-slate-500">
-                  <th className="px-5 py-3 font-semibold">Patient</th>
-                  <th className="px-5 py-3 font-semibold">Number</th>
-                  <th className="px-5 py-3 font-semibold">Type</th>
-                  <th className="px-5 py-3 font-semibold">Ailment</th>
-                  <th className="px-5 py-3 font-semibold">Room</th>
-                  <th className="px-5 py-3 font-semibold">Status</th>
-                  {isAdmin && <th className="px-5 py-3 text-right font-semibold">Actions</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {patients.map((p) => {
-                  const discharged = Boolean(p.pat_walk_out_date)
-                  return (
-                    <tr key={p.pat_id} className="hover:bg-slate-50">
-                      <td className="px-5 py-3.5">
-                        <p className="font-medium text-slate-800">{`${p.pat_fname} ${p.pat_lname}`.trim()}</p>
-                        <p className="text-xs text-slate-500">{p.pat_phone || '–'}</p>
-                      </td>
-                      <td className="px-5 py-3.5 font-mono text-xs text-slate-500">{p.pat_number}</td>
-                      <td className="px-5 py-3.5 text-slate-600">{p.pat_type || '–'}</td>
-                      <td className="px-5 py-3.5 text-slate-600">{p.pat_ailment || '–'}</td>
-                      <td className="px-5 py-3.5 text-slate-600">{p.pat_room_number || '–'}</td>
-                      <td className="px-5 py-3.5">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${
-                            discharged
-                              ? 'bg-slate-100 text-slate-600 ring-slate-200'
-                              : 'bg-emerald-50 text-emerald-700 ring-emerald-200'
-                          }`}
-                        >
-                          {discharged ? 'Discharged' : p.pat_discharge_status || 'Active'}
-                        </span>
-                      </td>
-                      {isAdmin && (
-                        <td className="px-5 py-3.5">
-                          <div className="flex justify-end gap-2 text-xs font-semibold">
-                            {!discharged && (
-                              <button onClick={() => discharge(p)} className="rounded-md bg-slate-100 px-2.5 py-1.5 text-slate-700 hover:bg-slate-200">
-                                Discharge
-                              </button>
-                            )}
-                            <button onClick={() => openEdit(p)} className="rounded-md bg-brand-50 px-2.5 py-1.5 text-brand-700 hover:bg-brand-100">
-                              Edit
-                            </button>
-                            <button onClick={() => remove(p)} className="rounded-md bg-rose-50 px-2.5 py-1.5 text-rose-700 hover:bg-rose-100">
-                              Delete
-                            </button>
-                          </div>
-                        </td>
+        <Select
+          value={status}
+          onValueChange={(value) => {
+            setStatus(value === 'all' ? '' : value)
+            setPage(1)
+          }}
+        >
+          <SelectTrigger className="w-44" aria-label="Filter by status">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All patients</SelectItem>
+            <SelectItem value="active">Active only</SelectItem>
+            <SelectItem value="discharged">Discharged only</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Table */}
+      <div className="mt-4 rounded-xl border border-border bg-card">
+        {loading ? (
+          <div className="flex flex-col gap-2 p-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-11 w-full" />
+            ))}
+          </div>
+        ) : error ? (
+          <Empty>
+            <EmptyHeader>
+              <EmptyTitle>Could not load patients</EmptyTitle>
+              <EmptyDescription>{error}</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Patient</TableHead>
+                <TableHead>Record no.</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Ailment</TableHead>
+                <TableHead>Room</TableHead>
+                <TableHead>Status</TableHead>
+                {isAdmin && <TableHead className="text-right">Actions</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {patients.map((p) => {
+                const discharged = Boolean(p.pat_walk_out_date)
+                return (
+                  <TableRow key={p.pat_id}>
+                    <TableCell>
+                      <p className="font-medium">{`${p.pat_fname} ${p.pat_lname}`.trim()}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">{p.pat_phone || 'No phone'}</p>
+                    </TableCell>
+                    <TableCell><RecordCode value={p.pat_number} /></TableCell>
+                    <TableCell className="text-muted-foreground">{p.pat_type || '–'}</TableCell>
+                    <TableCell className="text-muted-foreground">{p.pat_ailment || '–'}</TableCell>
+                    <TableCell className="tabular-nums text-muted-foreground">{p.pat_room_number || '–'}</TableCell>
+                    <TableCell>
+                      <span className={discharged ? 'text-sm text-success' : 'text-sm font-medium text-foreground'}>
+                        {discharged ? 'Discharged' : p.pat_discharge_status || 'Active'}
+                      </span>
+                    </TableCell>
+                    {isAdmin && (
+                      <TableCell>
+                        <div className="flex justify-end gap-1.5">
+                          {!discharged && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setConfirm({ kind: 'discharge', patient: p })}
+                            >
+                              Discharge
+                            </Button>
+                          )}
+                          <Button variant="outline" size="sm" onClick={() => openEdit(p)}>
+                            Edit
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => setConfirm({ kind: 'delete', patient: p })}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                )
+              })}
+              {patients.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={isAdmin ? 7 : 6}>
+                    <Empty className="border-0">
+                      <EmptyHeader>
+                        <EmptyMedia variant="icon">
+                          <CircleUserRound />
+                        </EmptyMedia>
+                        <EmptyTitle>No patients found</EmptyTitle>
+                        <EmptyDescription>
+                          {search || status
+                            ? 'No records match the current search or filter.'
+                            : 'Register the first patient to get started.'}
+                        </EmptyDescription>
+                      </EmptyHeader>
+                      {isAdmin && !search && !status && (
+                        <Button onClick={openAdd}>Register patient</Button>
                       )}
-                    </tr>
-                  )
-                })}
-                {patients.length === 0 && (
-                  <tr>
-                    <td colSpan={isAdmin ? 7 : 6} className="px-5 py-10 text-center text-slate-500">
-                      No patients found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                    </Empty>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        )}
 
-          {/* Pagination */}
-          {meta && meta.last_page > 1 && (
-            <div className="flex items-center justify-between border-t border-slate-200 px-5 py-3 text-sm">
-              <p className="text-slate-500">
-                Page {meta.current_page} of {meta.last_page} · {meta.total} patients
-              </p>
-              <div className="flex gap-2">
-                <button
-                  disabled={meta.current_page <= 1}
-                  onClick={() => setPage((n) => n - 1)}
-                  className="rounded-md border border-slate-300 px-3 py-1.5 font-medium text-slate-700 disabled:opacity-40"
-                >
-                  Previous
-                </button>
-                <button
-                  disabled={meta.current_page >= meta.last_page}
-                  onClick={() => setPage((n) => n + 1)}
-                  className="rounded-md border border-slate-300 px-3 py-1.5 font-medium text-slate-700 disabled:opacity-40"
-                >
-                  Next
-                </button>
-              </div>
+        {/* Pagination */}
+        {meta && meta.last_page > 1 && !loading && (
+          <div className="flex items-center justify-between border-t border-border px-4 py-3">
+            <p className="text-sm text-muted-foreground">
+              Page {meta.current_page} of {meta.last_page}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={meta.current_page <= 1}
+                onClick={() => setPage((n) => n - 1)}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={meta.current_page >= meta.last_page}
+                onClick={() => setPage((n) => n + 1)}
+              >
+                Next
+              </Button>
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
-      {/* Add / edit modal */}
-      <Modal open={modal !== null} onClose={() => setModal(null)} title={editing ? 'Edit patient' : 'Register patient'} wide>
-        <form onSubmit={save} className="grid gap-4 sm:grid-cols-2">
-          <Field label="First name" required>
-            <input required value={form.pat_fname} onChange={(e) => setForm({ ...form, pat_fname: e.target.value })} className={inputClass} />
-          </Field>
-          <Field label="Last name" required>
-            <input required value={form.pat_lname} onChange={(e) => setForm({ ...form, pat_lname: e.target.value })} className={inputClass} />
-          </Field>
-          <Field label="Phone">
-            <input value={form.pat_phone} onChange={(e) => setForm({ ...form, pat_phone: e.target.value })} className={inputClass} />
-          </Field>
-          <Field label="Type">
-            <select value={form.pat_type} onChange={(e) => setForm({ ...form, pat_type: e.target.value })} className={inputClass}>
-              <option value="Outpatient">Outpatient</option>
-              <option value="Inpatient">Inpatient</option>
-            </select>
-          </Field>
-          <Field label="Date of birth">
-            <input type="date" value={form.pat_dob} onChange={(e) => setForm({ ...form, pat_dob: e.target.value })} className={inputClass} />
-          </Field>
-          <Field label="Age">
-            <input value={form.pat_age} onChange={(e) => setForm({ ...form, pat_age: e.target.value })} className={inputClass} />
-          </Field>
-          <Field label="Ailment">
-            <input value={form.pat_ailment} onChange={(e) => setForm({ ...form, pat_ailment: e.target.value })} className={inputClass} />
-          </Field>
-          <Field label="Room number">
-            <input value={form.pat_room_number} onChange={(e) => setForm({ ...form, pat_room_number: e.target.value })} className={inputClass} />
-          </Field>
-          <div className="sm:col-span-2">
-            <Field label="Address">
-              <input value={form.pat_addr} onChange={(e) => setForm({ ...form, pat_addr: e.target.value })} className={inputClass} />
-            </Field>
-          </div>
-          <div className="flex justify-end gap-3 sm:col-span-2">
-            <button type="button" onClick={() => setModal(null)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={busy}
-              className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-500 disabled:opacity-60"
-            >
-              {busy && <Spinner className="h-4 w-4 text-white" />}
-              {editing ? 'Save changes' : 'Register patient'}
-            </button>
-          </div>
-        </form>
-      </Modal>
+      {/* Register / edit dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editing ? 'Edit patient' : 'Register patient'}</DialogTitle>
+            <DialogDescription>
+              {editing
+                ? 'Update the patient details. Changes save to the same record.'
+                : 'The record number is generated for you when the patient is saved.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={save}>
+            <FieldGroup className="gap-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="pat_fname">First name</FieldLabel>
+                  <Input
+                    id="pat_fname"
+                    required
+                    value={form.pat_fname}
+                    onChange={(e) => setForm({ ...form, pat_fname: e.target.value })}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="pat_lname">Last name</FieldLabel>
+                  <Input
+                    id="pat_lname"
+                    required
+                    value={form.pat_lname}
+                    onChange={(e) => setForm({ ...form, pat_lname: e.target.value })}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="pat_phone">Phone</FieldLabel>
+                  <Input
+                    id="pat_phone"
+                    value={form.pat_phone}
+                    onChange={(e) => setForm({ ...form, pat_phone: e.target.value })}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="pat_type">Patient type</FieldLabel>
+                  <Select value={form.pat_type} onValueChange={(value) => setForm({ ...form, pat_type: value })}>
+                    <SelectTrigger id="pat_type" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Outpatient">Outpatient</SelectItem>
+                      <SelectItem value="Inpatient">Inpatient</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="pat_dob">Date of birth</FieldLabel>
+                  <Input
+                    id="pat_dob"
+                    type="date"
+                    value={form.pat_dob}
+                    onChange={(e) => setForm({ ...form, pat_dob: e.target.value })}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="pat_age">Age</FieldLabel>
+                  <Input
+                    id="pat_age"
+                    value={form.pat_age}
+                    onChange={(e) => setForm({ ...form, pat_age: e.target.value })}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="pat_ailment">Ailment</FieldLabel>
+                  <Input
+                    id="pat_ailment"
+                    value={form.pat_ailment}
+                    onChange={(e) => setForm({ ...form, pat_ailment: e.target.value })}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="pat_room_number">Room number</FieldLabel>
+                  <Input
+                    id="pat_room_number"
+                    value={form.pat_room_number}
+                    onChange={(e) => setForm({ ...form, pat_room_number: e.target.value })}
+                  />
+                </Field>
+              </div>
+              <Field>
+                <FieldLabel htmlFor="pat_addr">Address</FieldLabel>
+                <Input
+                  id="pat_addr"
+                  value={form.pat_addr}
+                  onChange={(e) => setForm({ ...form, pat_addr: e.target.value })}
+                />
+              </Field>
+            </FieldGroup>
+
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={busy}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={busy}>
+                {busy && <Spinner data-icon="inline-start" />}
+                {editing ? 'Save changes' : 'Register patient'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Discharge / remove confirmation */}
+      <ConfirmDialog
+        open={Boolean(confirm)}
+        onOpenChange={(open) => !open && setConfirm(null)}
+        destructive={confirm?.kind === 'delete'}
+        busy={confirmBusy}
+        title={confirm?.kind === 'delete' ? 'Remove this patient?' : 'Discharge this patient?'}
+        description={
+          confirm?.kind === 'delete'
+            ? `${confirm?.patient?.pat_fname} ${confirm?.patient?.pat_lname} will be removed from the books. This cannot be undone.`
+            : 'The discharge date is recorded and the patient leaves the active list.'
+        }
+        confirmLabel={confirm?.kind === 'delete' ? 'Remove patient' : 'Discharge patient'}
+        onConfirm={runConfirm}
+      />
     </>
   )
 }

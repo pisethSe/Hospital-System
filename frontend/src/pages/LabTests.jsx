@@ -1,10 +1,52 @@
 import { useState } from 'react'
-import { useAuth } from '../context/AuthContext'
-import { Badge, errorMessage, ErrorAlert, Field, inputClass, Modal, PageHeader, Spinner, useApi } from '../components/ui'
-import api from '../api/client'
+import api from '@/api/client'
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  PageHeader,
+  RecordCode,
+  StatusBadge,
+  errorMessage,
+  useApi,
+} from '@/components/ui'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Skeleton } from '@/components/ui/skeleton'
+import { toast } from 'sonner'
+import { FlaskConical, Search } from 'lucide-react'
+
+function fmtDate(value) {
+  if (!value) return '–'
+  return new Date(value).toLocaleString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
 
 export default function LabTests() {
-  const { isAdmin } = useAuth()
   const [search, setSearch] = useState('')
   const [pendingOnly, setPendingOnly] = useState(false)
 
@@ -15,9 +57,13 @@ export default function LabTests() {
   const [addOpen, setAddOpen] = useState(false)
   const [resultFor, setResultFor] = useState(null)
   const [busy, setBusy] = useState(false)
-  const [alert, setAlert] = useState(null)
 
-  const [form, setForm] = useState({ lab_pat_name: '', lab_pat_number: '', lab_pat_ailment: '', lab_pat_tests: '' })
+  const [form, setForm] = useState({
+    lab_pat_name: '',
+    lab_pat_number: '',
+    lab_pat_ailment: '',
+    lab_pat_tests: '',
+  })
   const [result, setResult] = useState('')
 
   const tests = data?.data || []
@@ -25,14 +71,16 @@ export default function LabTests() {
   const addTest = async (e) => {
     e.preventDefault()
     setBusy(true)
-    setAlert(null)
     try {
       await api.post('/lab-tests', form)
+      toast.success('Lab test requested', {
+        description: `${form.lab_pat_name} was added to the bench queue.`,
+      })
       setAddOpen(false)
       setForm({ lab_pat_name: '', lab_pat_number: '', lab_pat_ailment: '', lab_pat_tests: '' })
       reload()
     } catch (err) {
-      setAlert(errorMessage(err))
+      toast.error(errorMessage(err))
     } finally {
       setBusy(false)
     }
@@ -41,14 +89,14 @@ export default function LabTests() {
   const saveResult = async (e) => {
     e.preventDefault()
     setBusy(true)
-    setAlert(null)
     try {
       await api.put(`/lab-tests/${resultFor.lab_id}/result`, { lab_pat_results: result })
+      toast.success('Results recorded')
       setResultFor(null)
       setResult('')
       reload()
     } catch (err) {
-      setAlert(errorMessage(err))
+      toast.error(errorMessage(err))
     } finally {
       setBusy(false)
     }
@@ -58,156 +106,216 @@ export default function LabTests() {
     <>
       <PageHeader
         title="Laboratory"
-        subtitle="Lab test requests and results."
-        action={
-          <button
-            onClick={() => setAddOpen(true)}
-            className="rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-500"
-          >
-            + Request lab test
-          </button>
-        }
+        description="Requested panels, recorded results, and what is still waiting on the bench."
+        action={<Button onClick={() => setAddOpen(true)}>Request lab test</Button>}
       />
 
-      <ErrorAlert message={alert} />
-
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <input
-          type="search"
-          placeholder="Search patient or lab number…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className={`${inputClass} max-w-xs`}
-        />
-        <label className="flex items-center gap-2 text-sm text-slate-600">
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        <div className="relative w-full max-w-xs">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search patient or lab number"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
           <input
             type="checkbox"
             checked={pendingOnly}
             onChange={(e) => setPendingOnly(e.target.checked)}
-            className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+            className="size-4 rounded border-input accent-[var(--primary)]"
           />
-          Pending only
+          Waiting on results only
         </label>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-16">
-          <Spinner className="h-7 w-7" />
-        </div>
-      ) : error ? (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">{error}</div>
-      ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50">
-                <tr className="text-xs uppercase tracking-wide text-slate-500">
-                  <th className="px-5 py-3 font-semibold">Lab #</th>
-                  <th className="px-5 py-3 font-semibold">Patient</th>
-                  <th className="px-5 py-3 font-semibold">Patient #</th>
-                  <th className="px-5 py-3 font-semibold">Tests</th>
-                  <th className="px-5 py-3 font-semibold">Status</th>
-                  <th className="px-5 py-3 text-right font-semibold">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {tests.map((l) => (
-                  <tr key={l.lab_id} className="align-top hover:bg-slate-50">
-                    <td className="px-5 py-3.5 font-mono text-xs text-slate-500">#{l.lab_number}</td>
-                    <td className="px-5 py-3.5">
-                      <p className="font-medium text-slate-800">{l.lab_pat_name}</p>
-                      <p className="text-xs text-slate-500">{l.lab_pat_ailment || '–'}</p>
-                    </td>
-                    <td className="px-5 py-3.5 font-mono text-xs text-slate-500">{l.lab_pat_number}</td>
-                    <td className="max-w-[220px] px-5 py-3.5 text-slate-600">
-                      <span className="line-clamp-2 whitespace-pre-line">{l.lab_pat_tests || '–'}</span>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <Badge text={l.lab_pat_results ? 'Completed' : 'Pending'} />
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex justify-end">
-                        <button
-                          onClick={() => {
-                            setResultFor(l)
-                            setResult(l.lab_pat_results || '')
-                          }}
-                          className="rounded-md bg-brand-50 px-2.5 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-100"
-                        >
-                          {l.lab_pat_results ? 'Edit results' : 'Add results'}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {tests.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-5 py-10 text-center text-slate-500">
-                      No lab tests found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+      <div className="mt-4 rounded-xl border border-border bg-card">
+        {loading ? (
+          <div className="flex flex-col gap-2 p-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-11 w-full" />
+            ))}
           </div>
-        </div>
-      )}
+        ) : error ? (
+          <Empty>
+            <EmptyHeader>
+              <EmptyTitle>Could not load lab tests</EmptyTitle>
+              <EmptyDescription>{error}</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Lab no.</TableHead>
+                <TableHead>Patient</TableHead>
+                <TableHead>Tests requested</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Recorded</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tests.map((l) => (
+                <TableRow key={l.lab_id}>
+                  <TableCell><RecordCode value={l.lab_number} /></TableCell>
+                  <TableCell>
+                    <p className="font-medium">{l.lab_pat_name}</p>
+                    <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">{l.lab_pat_number || '–'}</p>
+                  </TableCell>
+                  <TableCell className="max-w-[240px] text-muted-foreground">
+                    <span className="line-clamp-2 whitespace-pre-line">{l.lab_pat_tests || '–'}</span>
+                  </TableCell>
+                  <TableCell><StatusBadge status={l.lab_pat_results ? 'Completed' : 'Pending'} /></TableCell>
+                  <TableCell className="text-right text-muted-foreground">{fmtDate(l.lab_date_rec)}</TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setResultFor(l)
+                        setResult(l.lab_pat_results || '')
+                      }}
+                    >
+                      {l.lab_pat_results ? 'Edit results' : 'Record results'}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {tests.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6}>
+                    <Empty className="border-0">
+                      <EmptyHeader>
+                        <EmptyMedia variant="icon">
+                          <FlaskConical />
+                        </EmptyMedia>
+                        <EmptyTitle>No lab tests found</EmptyTitle>
+                        <EmptyDescription>
+                          {pendingOnly
+                            ? 'Nothing is waiting on the bench — every requested panel has results.'
+                            : search
+                              ? 'No panels match the search.'
+                              : 'Request the first test to get started.'}
+                        </EmptyDescription>
+                      </EmptyHeader>
+                      {!pendingOnly && !search && (
+                        <Button onClick={() => setAddOpen(true)}>Request lab test</Button>
+                      )}
+                    </Empty>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        )}
+      </div>
 
-      {/* Add test */}
-      <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Request lab test">
-        <form onSubmit={addTest} className="space-y-4">
-          <Field label="Patient name" required>
-            <input required value={form.lab_pat_name} onChange={(e) => setForm({ ...form, lab_pat_name: e.target.value })} className={inputClass} />
-          </Field>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Patient number">
-              <input value={form.lab_pat_number} onChange={(e) => setForm({ ...form, lab_pat_number: e.target.value })} className={inputClass} />
-            </Field>
-            <Field label="Ailment">
-              <input value={form.lab_pat_ailment} onChange={(e) => setForm({ ...form, lab_pat_ailment: e.target.value })} className={inputClass} />
-            </Field>
-          </div>
-          <Field label="Tests requested" required>
-            <textarea
-              required
-              rows={4}
-              value={form.lab_pat_tests}
-              onChange={(e) => setForm({ ...form, lab_pat_tests: e.target.value })}
-              placeholder="e.g. Body temperature, Blood, Stool, Urine"
-              className={inputClass}
-            />
-          </Field>
-          <p className="text-xs text-slate-500">A lab number is generated automatically (same algorithm as the legacy system).</p>
-          <div className="flex justify-end gap-3">
-            <button type="button" onClick={() => setAddOpen(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">
-              Cancel
-            </button>
-            <button type="submit" disabled={busy} className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-500 disabled:opacity-60">
-              {busy ? 'Saving…' : 'Request test'}
-            </button>
-          </div>
-        </form>
-      </Modal>
+      {/* Request test dialog */}
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Request a lab test</DialogTitle>
+            <DialogDescription>
+              The panel goes to the bench queue with a lab number generated for you.
+            </DialogDescription>
+          </DialogHeader>
 
-      {/* Add / edit results */}
-      <Modal open={Boolean(resultFor)} onClose={() => setResultFor(null)} title={`Lab results — #${resultFor?.lab_number || ''}`}>
-        <form onSubmit={saveResult} className="space-y-4">
-          <p className="text-sm text-slate-600">
-            Patient: <span className="font-medium text-slate-800">{resultFor?.lab_pat_name}</span>
-          </p>
-          <Field label="Results" required>
-            <textarea required rows={6} value={result} onChange={(e) => setResult(e.target.value)} className={inputClass} />
-          </Field>
-          <div className="flex justify-end gap-3">
-            <button type="button" onClick={() => setResultFor(null)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">
-              Cancel
-            </button>
-            <button type="submit" disabled={busy} className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-500 disabled:opacity-60">
-              {busy ? 'Saving…' : 'Save results'}
-            </button>
-          </div>
-        </form>
-      </Modal>
+          <form onSubmit={addTest}>
+            <FieldGroup className="gap-4">
+              <Field>
+                <FieldLabel htmlFor="lab_pat_name">Patient name</FieldLabel>
+                <Input
+                  id="lab_pat_name"
+                  required
+                  value={form.lab_pat_name}
+                  onChange={(e) => setForm({ ...form, lab_pat_name: e.target.value })}
+                />
+              </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="lab_pat_number">Patient record no.</FieldLabel>
+                  <Input
+                    id="lab_pat_number"
+                    placeholder="e.g. 7EW0L"
+                    value={form.lab_pat_number}
+                    onChange={(e) => setForm({ ...form, lab_pat_number: e.target.value })}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="lab_pat_ailment">Ailment</FieldLabel>
+                  <Input
+                    id="lab_pat_ailment"
+                    value={form.lab_pat_ailment}
+                    onChange={(e) => setForm({ ...form, lab_pat_ailment: e.target.value })}
+                  />
+                </Field>
+              </div>
+              <Field>
+                <FieldLabel htmlFor="lab_pat_tests">Tests requested</FieldLabel>
+                <Textarea
+                  id="lab_pat_tests"
+                  required
+                  rows={4}
+                  placeholder="e.g. Body temperature, blood, stool, urine"
+                  value={form.lab_pat_tests}
+                  onChange={(e) => setForm({ ...form, lab_pat_tests: e.target.value })}
+                />
+                <FieldDescription>One test per line, or a short list in plain words.</FieldDescription>
+              </Field>
+            </FieldGroup>
+
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => setAddOpen(false)} disabled={busy}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={busy}>
+                {busy ? 'Requesting' : 'Request test'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Record results dialog */}
+      <Dialog open={Boolean(resultFor)} onOpenChange={(open) => !open && setResultFor(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Record results</DialogTitle>
+            <DialogDescription>
+              {resultFor?.lab_pat_name} · panel {resultFor?.lab_number}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={saveResult}>
+            <FieldGroup className="gap-4">
+              <Field>
+                <FieldLabel htmlFor="lab_pat_results">Results</FieldLabel>
+                <Textarea
+                  id="lab_pat_results"
+                  required
+                  rows={6}
+                  placeholder="What came back from the panel"
+                  value={result}
+                  onChange={(e) => setResult(e.target.value)}
+                />
+              </Field>
+            </FieldGroup>
+
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => setResultFor(null)} disabled={busy}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={busy}>
+                {busy ? 'Saving' : 'Record results'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

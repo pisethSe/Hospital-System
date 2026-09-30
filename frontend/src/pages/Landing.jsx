@@ -1,164 +1,232 @@
 import { Link } from 'react-router-dom'
+import {
+  ClipboardList,
+  FlaskConical,
+  HeartPulse,
+  Pill,
+  Stethoscope,
+  Syringe,
+  Users,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { RecordCode } from '@/components/ui'
 
 const features = [
   {
-    title: 'Patient Management',
-    desc: 'Register patients, track rooms, ailments and discharge records — with auto-generated patient numbers.',
-    icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
+    icon: Users,
+    title: 'Patients',
+    module: 'Front desk',
+    description:
+      'Register patients in seconds. Every patient gets a record number automatically, and discharge records keep themselves up to date.',
   },
   {
-    title: 'Doctor Panel',
-    desc: 'Doctors get their own workspace for lab tests, prescriptions and patient vitals.',
-    icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+    icon: Stethoscope,
+    title: 'Doctors',
+    module: 'Administration',
+    description:
+      'Doctor accounts with their own sign-in ID and department, so each doctor only sees the work that is theirs.',
   },
   {
+    icon: FlaskConical,
     title: 'Laboratory',
-    desc: 'Request lab tests, record results and track pending work in one place.',
-    icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z',
+    module: 'Lab',
+    description:
+      'Request tests, record results and see at a glance which panels are still waiting on the bench.',
   },
   {
+    icon: Syringe,
+    title: 'Surgery',
+    module: 'Theatre',
+    description:
+      'Schedule theatre patients, assign the surgeon and track each operation from pending to done.',
+  },
+  {
+    icon: ClipboardList,
+    title: 'Prescriptions',
+    module: 'Ward rounds',
+    description:
+      'Write a prescription with medicines, quantities and dosage times — stored with the patient record.',
+  },
+  {
+    icon: Pill,
     title: 'Pharmacy',
-    desc: 'Manage pharmaceuticals, categories, vendors and stock quantities.',
-    icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
-  },
-  {
-    title: 'Surgery / Theatre',
-    desc: 'Schedule theatre patients, assign surgeons and track surgery status.',
-    icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
-  },
-  {
-    title: 'Patient Vitals',
-    desc: 'Record body temperature, pulse, respiration rate and blood pressure over time.',
-    icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z',
+    module: 'Stock room',
+    description:
+      'Keep medicines, categories, vendors and quantities in one inventory, with barcodes generated for you.',
   },
 ]
 
-const departments = [
-  'General Medicine',
-  'Laboratory',
-  'Surgery',
-  'Pharmacy',
-  'Radiology',
-  'Emergency',
-  'Pediatrics',
-  'Cardiology',
-]
+function VitalsStrip() {
+  return (
+    <div className="grid grid-cols-4 divide-x divide-border rounded-lg border border-border bg-card">
+      {[
+        ['Temp', '36.8 °C'],
+        ['Pulse', '72 bpm'],
+        ['Resp', '16 rpm'],
+        ['BP', '120/80'],
+      ].map(([label, value]) => (
+        <div key={label} className="px-3 py-2.5">
+          <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
+          <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">{value}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/*
+ * The hero shows the product itself: a patient record with the vitals
+ * strip and a lab panel — the objects hospital staff look at all day.
+ */
+function ProductMock() {
+  return (
+    <div className="w-full max-w-md rounded-xl border border-border bg-card shadow-sm">
+      <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+        <div>
+          <p className="text-sm font-semibold text-foreground">Chan Dara</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">Inpatient · Ward 4, Room 12</p>
+        </div>
+        <RecordCode value="7EW0L" />
+      </div>
+      <div className="px-5 py-4">
+        <VitalsStrip />
+      </div>
+      <div className="border-t border-border px-5 py-3.5">
+        <p className="text-xs font-medium text-muted-foreground">Latest lab panel</p>
+        <div className="mt-2.5 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium text-foreground">Complete blood count</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">Taken today, 09:15</p>
+          </div>
+          <Badge variant="outline" className="border-success/25 text-success">
+            Results in
+          </Badge>
+        </div>
+      </div>
+      <div className="border-t border-border px-5 py-3.5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium text-foreground">Paracetamol 500 mg</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">1 tablet, every 6 hours</p>
+          </div>
+          <Badge variant="outline" className="border-warning/30 text-warning">
+            Pending
+          </Badge>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      {/* Navbar */}
-      <header className="sticky top-0 z-10 border-b border-white/10 bg-slate-950/80 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Header */}
+      <header className="sticky top-0 z-10 border-b border-border bg-background/90 backdrop-blur">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 lg:px-6">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-500 text-white">
-              <svg className="h-5 w-5" viewBox="0 0 100 100" fill="currentColor">
+            <span className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
+              <svg viewBox="0 0 100 100" fill="currentColor" className="size-4" aria-hidden="true">
                 <path d="M40 18h20v22h22v20H60v22H40V60H18V40h22z" />
               </svg>
             </span>
-            <span className="text-base font-semibold">Hospital System</span>
+            <span className="text-sm font-semibold">Hospital System</span>
           </div>
-          <Link
-            to="/login"
-            className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-400"
-          >
-            Sign in
-          </Link>
+          <Button nativeButton={false} render={<Link to="/login" />}>Sign in</Button>
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute -top-40 left-1/2 h-[500px] w-[900px] -translate-x-1/2 rounded-full bg-brand-500/20 blur-3xl" />
-        <div className="relative mx-auto max-w-6xl px-4 py-24 text-center lg:py-32">
-          <p className="mx-auto mb-5 inline-flex rounded-full border border-brand-400/30 bg-brand-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-brand-300">
-            Hospital Management System
-          </p>
-          <h1 className="mx-auto max-w-3xl text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
-            Run your hospital <span className="text-brand-400">smarter</span>, from front desk to pharmacy.
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-slate-400 sm:text-lg">
-            One system for patients, doctors, laboratory, surgery, prescriptions and pharmacy — with a clean
-            React interface and a secure Laravel API.
-          </p>
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-            <Link
-              to="/login"
-              className="rounded-lg bg-brand-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition hover:bg-brand-400"
-            >
-              Open the dashboard
-            </Link>
-            <a
-              href="#features"
-              className="rounded-lg border border-white/15 px-6 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/5"
-            >
-              Explore features
-            </a>
+      {/* Hero — left-aligned, grounded in the product */}
+      <section className="mx-auto max-w-6xl px-4 pb-20 pt-16 lg:px-6 lg:pt-24">
+        <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_1fr]">
+          <div>
+            <h1 className="text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl">
+              Every patient, prescription and lab result in one system.
+            </h1>
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground">
+              Hospital System keeps the front desk, doctors, laboratory and pharmacy working from the
+              same records. Register a patient once — the number, the chart, the vitals and the
+              discharge follow from there.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <Button size="lg" nativeButton={false} render={<Link to="/login" />}>
+                Sign in
+              </Button>
+              <Button size="lg" variant="outline" nativeButton={false} render={<a href="#modules" />}>
+                See what's inside
+              </Button>
+            </div>
+          </div>
+          <div className="flex justify-center lg:justify-end">
+            <ProductMock />
+          </div>
+        </div>
+      </section>
+
+      {/* Modules — one bordered record, rows separated by rules */}
+      <section id="modules" className="border-t border-border bg-card">
+        <div className="mx-auto max-w-6xl px-4 py-16 lg:px-6 lg:py-20">
+          <div className="max-w-xl">
+            <h2 className="text-2xl font-semibold tracking-tight">What the system covers</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Six modules, one set of records. Each role signs in to the part of the hospital it works in.
+            </p>
           </div>
 
-          <dl className="mx-auto mt-16 grid max-w-3xl grid-cols-3 gap-4 text-center">
-            {[
-              ['Admin', 'Full management'],
-              ['Doctors', 'Own workspace'],
-              ['Roles', 'Secure access'],
-            ].map(([value, label]) => (
-              <div key={label} className="rounded-xl border border-white/10 bg-white/5 px-4 py-5">
-                <dt className="text-xl font-bold text-brand-300 sm:text-2xl">{value}</dt>
-                <dd className="mt-1 text-xs text-slate-400 sm:text-sm">{label}</dd>
+          <div className="mt-10 rounded-xl border border-border bg-background">
+            {features.map((f, i) => (
+              <div key={f.title}>
+                {i > 0 && <Separator />}
+                <div className="grid gap-3 px-5 py-5 sm:grid-cols-[auto_1fr_auto] sm:items-start sm:gap-6 sm:px-6">
+                  <span className="flex size-9 items-center justify-center rounded-md bg-primary/8 text-primary">
+                    <f.icon className="size-4.5" strokeWidth={1.75} aria-hidden="true" />
+                  </span>
+                  <div className="max-w-xl">
+                    <h3 className="text-sm font-semibold">{f.title}</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{f.description}</p>
+                  </div>
+                  <p className="text-xs font-medium text-muted-foreground sm:pt-1.5">{f.module}</p>
+                </div>
               </div>
             ))}
-          </dl>
+          </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section id="features" className="mx-auto max-w-6xl px-4 py-20">
-        <h2 className="text-center text-3xl font-bold">Everything your hospital needs</h2>
-        <p className="mx-auto mt-3 max-w-xl text-center text-slate-400">
-          Modules carried over from the original system, rebuilt on a modern stack.
-        </p>
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((f) => (
-            <div
-              key={f.title}
-              className="rounded-2xl border border-white/10 bg-white/5 p-6 transition hover:border-brand-400/40 hover:bg-white/[0.07]"
-            >
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500/15 text-brand-300">
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d={f.icon} />
-                </svg>
-              </span>
-              <h3 className="mt-4 text-lg font-semibold">{f.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-400">{f.desc}</p>
+      {/* Roles */}
+      <section className="border-t border-border">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 lg:grid-cols-2 lg:px-6">
+          <div>
+            <h2 className="text-2xl font-semibold tracking-tight">Two sign-ins, one set of records</h2>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              Administrators sign in with an email address and manage the whole hospital. Doctors sign
+              in with their doctor ID and work their own patients, lab tests and prescriptions.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-lg border border-border bg-card p-5">
+              <p className="text-sm font-semibold">Administrator</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                Full management: patients, doctors, theatre, pharmacy and stock.
+              </p>
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Departments */}
-      <section className="border-t border-white/10 bg-white/[0.02]">
-        <div className="mx-auto max-w-6xl px-4 py-16 text-center">
-          <h2 className="text-2xl font-bold">Departments</h2>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            {departments.map((d) => (
-              <span
-                key={d}
-                className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300"
-              >
-                {d}
-              </span>
-            ))}
+            <div className="rounded-lg border border-border bg-card p-5">
+              <p className="text-sm font-semibold">Doctor</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                Own workspace: patients, lab tests, vitals and prescriptions.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/10">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-8 text-sm text-slate-500 sm:flex-row">
-          <p>&copy; {new Date().getFullYear()} Hospital Management System</p>
-          <p>
-            React + Tailwind CSS frontend · Laravel API · MySQL database
-          </p>
+      <footer className="border-t border-border">
+        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-2 px-4 py-8 text-sm text-muted-foreground sm:flex-row lg:px-6">
+          <p>Hospital System</p>
+          <p>React and Tailwind CSS on the front, Laravel and MySQL behind it.</p>
         </div>
       </footer>
     </div>

@@ -1,12 +1,195 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/*
+|--------------------------------------------------------------------------
+| Hospital System — design tokens
+|--------------------------------------------------------------------------
+|
+| Direction: "the chart room" — calm, clinical precision.
+|
+| The palette is drawn from the product's own world: chart-paper white
+| surfaces on cool chart-room grey, pen-ink text, hairline record rules,
+| and a deep scrub-teal primary (the colour of surgical scrubs) reserved
+| for actions and active states. Medical red is reserved for destructive
+| actions, amber for pending states. Record codes (patient, lab, surgery
+| numbers) are the system's vernacular and are set in IBM Plex Mono.
+|
+| Type: IBM Plex Sans for interface text — engineered, precise, and at
+| home in clinical software. Hierarchy is carried mostly by weight and
+| colour, not size.
+|
+*/
+
+@import "@fontsource/ibm-plex-sans/400.css";
+@import "@fontsource/ibm-plex-sans/500.css";
+@import "@fontsource/ibm-plex-sans/600.css";
+@import "@fontsource/ibm-plex-sans/700.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "tailwindcss";
+@import "shadcn/tailwind.css";
+@import "tw-animate-css";
+
+@theme inline {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.5rem;
+
+  /* Chart-room grey, chart-paper white, pen ink */
+  --background: oklch(0.973 0.003 247);
+  --foreground: oklch(0.213 0.012 255);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.213 0.012 255);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.213 0.012 255);
+
+  /* Deep scrub teal — actions and active states only */
+  --primary: oklch(0.513 0.077 186.7);
+  --primary-foreground: oklch(0.988 0.002 250);
+
+  --secondary: oklch(0.966 0.004 247);
+  --secondary-foreground: oklch(0.32 0.012 255);
+  --muted: oklch(0.962 0.004 247);
+  --muted-foreground: oklch(0.505 0.016 252);
+
+  /* Faint teal wash for hover surfaces */
+  --accent: oklch(0.958 0.011 190);
+  --accent-foreground: oklch(0.36 0.05 195);
+
+  /* Medical alert red, kept for destructive actions */
+  --destructive: oklch(0.51 0.19 28);
+  --destructive-foreground: oklch(0.985 0.002 250);
+
+  /* Observation states */
+  --success: oklch(0.52 0.125 155);
+  --warning: oklch(0.55 0.115 70);
+
+  /* Hairline record rules */
+  --border: oklch(0.918 0.005 250);
+  --input: oklch(0.9 0.005 250);
+  --ring: oklch(0.513 0.077 186.7);
+
+  --chart-1: oklch(0.513 0.077 186.7);
+  --chart-2: oklch(0.62 0.06 220);
+  --chart-3: oklch(0.45 0.03 250);
+  --chart-4: oklch(0.7 0.05 195);
+  --chart-5: oklch(0.35 0.02 250);
+
+  /* Light sidebar — navigation serves content */
+  --sidebar: oklch(0.986 0.003 247);
+  --sidebar-foreground: oklch(0.213 0.012 255);
+  --sidebar-primary: oklch(0.513 0.077 186.7);
+  --sidebar-primary-foreground: oklch(0.988 0.002 250);
+  --sidebar-accent: oklch(0.955 0.014 190);
+  --sidebar-accent-foreground: oklch(0.4 0.06 195);
+  --sidebar-border: oklch(0.918 0.005 250);
+  --sidebar-ring: oklch(0.513 0.077 186.7);
+}
+
+.dark {
+  --background: oklch(0.178 0.008 255);
+  --foreground: oklch(0.955 0.003 247);
+  --card: oklch(0.216 0.009 255);
+  --card-foreground: oklch(0.955 0.003 247);
+  --popover: oklch(0.216 0.009 255);
+  --popover-foreground: oklch(0.955 0.003 247);
+  --primary: oklch(0.72 0.09 186);
+  --primary-foreground: oklch(0.178 0.008 255);
+  --secondary: oklch(0.26 0.01 255);
+  --secondary-foreground: oklch(0.955 0.003 247);
+  --muted: oklch(0.26 0.01 255);
+  --muted-foreground: oklch(0.7 0.012 252);
+  --accent: oklch(0.28 0.02 200);
+  --accent-foreground: oklch(0.9 0.04 190);
+  --destructive: oklch(0.62 0.18 25);
+  --destructive-foreground: oklch(0.985 0 0);
+  --success: oklch(0.68 0.12 155);
+  --warning: oklch(0.72 0.11 70);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.72 0.09 186);
+  --chart-1: oklch(0.72 0.09 186);
+  --chart-2: oklch(0.66 0.06 220);
+  --chart-3: oklch(0.6 0.01 250);
+  --chart-4: oklch(0.78 0.05 195);
+  --chart-5: oklch(0.5 0.01 250);
+  --sidebar: oklch(0.2 0.008 255);
+  --sidebar-foreground: oklch(0.955 0.003 247);
+  --sidebar-primary: oklch(0.72 0.09 186);
+  --sidebar-primary-foreground: oklch(0.178 0.008 255);
+  --sidebar-accent: oklch(0.28 0.02 200);
+  --sidebar-accent-foreground: oklch(0.9 0.04 190);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.72 0.09 186);
+}
 
 @layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
   html {
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
+
   body {
-    @apply bg-slate-100 text-slate-800;
+    @apply bg-background font-sans text-foreground;
+  }
+
+  ::selection {
+    @apply bg-primary/15 text-foreground;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

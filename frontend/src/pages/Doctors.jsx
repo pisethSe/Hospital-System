@@ -1,6 +1,31 @@
 import { useState } from 'react'
-import { errorMessage, ErrorAlert, Field, inputClass, Modal, PageHeader, Spinner, useApi } from '../components/ui'
-import api from '../api/client'
+import api from '@/api/client'
+import {
+  ConfirmDialog,
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  PageHeader,
+  RecordCode,
+  errorMessage,
+  useApi,
+} from '@/components/ui'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field'
+import { Skeleton } from '@/components/ui/skeleton'
+import { toast } from 'sonner'
+import { Search, Stethoscope } from 'lucide-react'
 
 const emptyForm = {
   doc_fname: '',
@@ -15,11 +40,13 @@ export default function Doctors() {
   const { data, loading, error, reload } = useApi('/doctors')
   const [search, setSearch] = useState('')
 
-  const [modal, setModal] = useState(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [busy, setBusy] = useState(false)
-  const [alert, setAlert] = useState(null)
+
+  const [confirm, setConfirm] = useState(null)
+  const [confirmBusy, setConfirmBusy] = useState(false)
 
   const doctors = (data?.data || []).filter((d) =>
     `${d.doc_fname} ${d.doc_lname} ${d.doc_number} ${d.doc_dept}`.toLowerCase().includes(search.toLowerCase()),
@@ -28,7 +55,7 @@ export default function Doctors() {
   const openAdd = () => {
     setForm(emptyForm)
     setEditing(null)
-    setModal('add')
+    setDialogOpen(true)
   }
 
   const openEdit = (d) => {
@@ -41,37 +68,45 @@ export default function Doctors() {
       doc_number: d.doc_number || '',
       password: '',
     })
-    setModal('edit')
+    setDialogOpen(true)
   }
 
   const save = async (e) => {
     e.preventDefault()
     setBusy(true)
-    setAlert(null)
     try {
       if (editing) {
         const payload = { ...form }
         if (!payload.password) delete payload.password
         await api.put(`/doctors/${editing.doc_id}`, payload)
+        toast.success('Doctor details updated')
       } else {
-        await api.post('/doctors', form)
+        const res = await api.post('/doctors', form)
+        toast.success('Doctor added', {
+          description: `${res.data?.data?.doc_fname || form.doc_fname} signs in with ID ${res.data?.data?.doc_number}.`,
+        })
       }
-      setModal(null)
+      setDialogOpen(false)
       reload()
     } catch (err) {
-      setAlert(errorMessage(err))
+      toast.error(errorMessage(err))
     } finally {
       setBusy(false)
     }
   }
 
-  const remove = async (d) => {
-    if (!window.confirm(`Remove ${`${d.doc_fname} ${d.doc_lname}`.trim()}?`)) return
+  const runRemove = async () => {
+    if (!confirm) return
+    setConfirmBusy(true)
     try {
-      await api.delete(`/doctors/${d.doc_id}`)
+      await api.delete(`/doctors/${confirm.doc_id}`)
+      toast.success('Doctor removed')
+      setConfirm(null)
       reload()
     } catch (err) {
-      window.alert(errorMessage(err))
+      toast.error(errorMessage(err))
+    } finally {
+      setConfirmBusy(false)
     }
   }
 
@@ -79,126 +114,181 @@ export default function Doctors() {
     <>
       <PageHeader
         title="Doctors"
-        subtitle="Doctor accounts and departments. Doctors sign in with their doctor ID."
-        action={
-          <button
-            onClick={openAdd}
-            className="rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-500"
-          >
-            + Add doctor
-          </button>
-        }
+        description="Doctor accounts, departments and sign-in IDs."
+        action={<Button onClick={openAdd}>Add doctor</Button>}
       />
 
-      <ErrorAlert message={alert} />
-
-      <div className="mb-4">
-        <input
+      <div className="relative mt-6 w-full max-w-xs">
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
           type="search"
-          placeholder="Search doctors…"
+          placeholder="Search doctors"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className={`${inputClass} max-w-xs`}
+          className="pl-8"
         />
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16">
-          <Spinner className="h-7 w-7" />
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-40 w-full rounded-xl" />
+          ))}
         </div>
       ) : error ? (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">{error}</div>
+        <Empty className="mt-6">
+          <EmptyHeader>
+            <EmptyTitle>Could not load doctors</EmptyTitle>
+            <EmptyDescription>{error}</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      ) : doctors.length === 0 ? (
+        <Empty className="mt-6 border-0">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Stethoscope />
+            </EmptyMedia>
+            <EmptyTitle>No doctors found</EmptyTitle>
+            <EmptyDescription>
+              {search ? 'No accounts match the search.' : 'Add the first doctor to get started.'}
+            </EmptyDescription>
+          </EmptyHeader>
+          {!search && <Button onClick={openAdd}>Add doctor</Button>}
+        </Empty>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {doctors.map((d) => (
-            <div key={d.doc_id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-500/10 text-base font-bold text-brand-700">
-                    {`${d.doc_fname?.[0] || ''}${d.doc_lname?.[0] || ''}`.toUpperCase() || 'D'}
-                  </span>
-                  <div>
-                    <p className="font-semibold text-slate-800">{`${d.doc_fname} ${d.doc_lname}`.trim()}</p>
-                    <p className="text-xs text-slate-500">{d.doc_dept || 'No department'}</p>
-                  </div>
+            <div key={d.doc_id} className="flex flex-col rounded-xl border border-border bg-card p-5">
+              <div className="flex items-center gap-3">
+                <span className="flex size-10 items-center justify-center rounded-md bg-primary/8 text-sm font-semibold text-primary">
+                  {`${d.doc_fname?.[0] || ''}${d.doc_lname?.[0] || ''}`.toUpperCase() || 'D'}
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold">{`${d.doc_fname} ${d.doc_lname}`.trim()}</p>
+                  <p className="truncate text-xs text-muted-foreground">{d.doc_dept || 'No department'}</p>
                 </div>
               </div>
-              <dl className="mt-4 space-y-1.5 text-sm">
-                <div className="flex justify-between gap-3">
-                  <dt className="text-slate-500">Doctor ID</dt>
-                  <dd className="font-mono text-xs text-slate-700">{d.doc_number}</dd>
+
+              <dl className="mt-4 flex flex-col gap-1.5 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-muted-foreground">Signs in with</dt>
+                  <dd><RecordCode value={d.doc_number} /></dd>
                 </div>
-                <div className="flex justify-between gap-3">
-                  <dt className="text-slate-500">Email</dt>
-                  <dd className="truncate text-slate-700">{d.doc_email || '–'}</dd>
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-muted-foreground">Email</dt>
+                  <dd className="truncate text-foreground">{d.doc_email || '–'}</dd>
                 </div>
               </dl>
-              <div className="mt-4 flex justify-end gap-2 text-xs font-semibold">
-                <button onClick={() => openEdit(d)} className="rounded-md bg-brand-50 px-2.5 py-1.5 text-brand-700 hover:bg-brand-100">
+
+              <div className="mt-4 flex justify-end gap-1.5 pt-1">
+                <Button variant="outline" size="sm" onClick={() => openEdit(d)}>
                   Edit
-                </button>
-                <button onClick={() => remove(d)} className="rounded-md bg-rose-50 px-2.5 py-1.5 text-rose-700 hover:bg-rose-100">
+                </Button>
+                <Button variant="destructive" size="sm" onClick={() => setConfirm(d)}>
                   Remove
-                </button>
+                </Button>
               </div>
             </div>
           ))}
-          {doctors.length === 0 && (
-            <div className="col-span-full rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">
-              No doctors found.
-            </div>
-          )}
         </div>
       )}
 
-      <Modal open={modal !== null} onClose={() => setModal(null)} title={editing ? 'Edit doctor' : 'Add doctor'}>
-        <form onSubmit={save} className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="First name" required>
-              <input required value={form.doc_fname} onChange={(e) => setForm({ ...form, doc_fname: e.target.value })} className={inputClass} />
-            </Field>
-            <Field label="Last name">
-              <input value={form.doc_lname} onChange={(e) => setForm({ ...form, doc_lname: e.target.value })} className={inputClass} />
-            </Field>
-            <Field label="Email">
-              <input type="email" value={form.doc_email} onChange={(e) => setForm({ ...form, doc_email: e.target.value })} className={inputClass} />
-            </Field>
-            <Field label="Department">
-              <input value={form.doc_dept} onChange={(e) => setForm({ ...form, doc_dept: e.target.value })} className={inputClass} />
-            </Field>
-            <Field label="Doctor ID (login)">
-              <input
-                value={form.doc_number}
-                onChange={(e) => setForm({ ...form, doc_number: e.target.value })}
-                placeholder="auto-generated if empty"
-                className={inputClass}
-              />
-            </Field>
-            <Field label={editing ? 'New password (optional)' : 'Password'} required={!editing}>
-              <input
-                type="password"
-                required={!editing}
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                className={inputClass}
-              />
-            </Field>
-          </div>
-          <div className="flex justify-end gap-3">
-            <button type="button" onClick={() => setModal(null)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={busy}
-              className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-500 disabled:opacity-60"
-            >
-              {busy && <Spinner className="h-4 w-4 text-white" />}
-              {editing ? 'Save changes' : 'Add doctor'}
-            </button>
-          </div>
-        </form>
-      </Modal>
+      {/* Add / edit dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editing ? 'Edit doctor' : 'Add doctor'}</DialogTitle>
+            <DialogDescription>
+              {editing
+                ? 'Leave the password field empty to keep the current password.'
+                : 'The doctor signs in with this ID and the password you set here.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={save}>
+            <FieldGroup className="gap-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="doc_fname">First name</FieldLabel>
+                  <Input
+                    id="doc_fname"
+                    required
+                    value={form.doc_fname}
+                    onChange={(e) => setForm({ ...form, doc_fname: e.target.value })}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="doc_lname">Last name</FieldLabel>
+                  <Input
+                    id="doc_lname"
+                    value={form.doc_lname}
+                    onChange={(e) => setForm({ ...form, doc_lname: e.target.value })}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="doc_email">Email</FieldLabel>
+                  <Input
+                    id="doc_email"
+                    type="email"
+                    value={form.doc_email}
+                    onChange={(e) => setForm({ ...form, doc_email: e.target.value })}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="doc_dept">Department</FieldLabel>
+                  <Input
+                    id="doc_dept"
+                    placeholder="e.g. General Medicine"
+                    value={form.doc_dept}
+                    onChange={(e) => setForm({ ...form, doc_dept: e.target.value })}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="doc_number">Sign-in ID</FieldLabel>
+                  <Input
+                    id="doc_number"
+                    placeholder="Generated if left empty"
+                    value={form.doc_number}
+                    onChange={(e) => setForm({ ...form, doc_number: e.target.value })}
+                  />
+                  <FieldDescription>Doctors type this ID to sign in.</FieldDescription>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="doc_password">{editing ? 'New password' : 'Password'}</FieldLabel>
+                  <Input
+                    id="doc_password"
+                    type="password"
+                    required={!editing}
+                    placeholder={editing ? 'Leave empty to keep current' : 'Set a password'}
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  />
+                </Field>
+              </div>
+            </FieldGroup>
+
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={busy}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={busy}>
+                {busy ? 'Saving' : editing ? 'Save changes' : 'Add doctor'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={Boolean(confirm)}
+        onOpenChange={(open) => !open && setConfirm(null)}
+        destructive
+        busy={confirmBusy}
+        title="Remove this doctor?"
+        description={`${confirm?.doc_fname || ''} ${confirm?.doc_lname || ''} will lose access to the system. This cannot be undone.`}
+        confirmLabel="Remove doctor"
+        onConfirm={runRemove}
+      />
     </>
   )
 }
