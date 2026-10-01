@@ -4,8 +4,8 @@ A full-stack **Hospital Management System (HMS)** — modernized from a legacy P
 
 | Layer    | Technology                     |
 | -------- | ------------------------------ |
-| Frontend | **React 18** + **Tailwind CSS** (Vite) |
-| Backend  | **Laravel 11** (REST API, Sanctum auth) |
+| Frontend | **React 18** + **Tailwind CSS v4** + **shadcn/ui** (Vite) |
+| Backend  | **Laravel 12** (REST API, Sanctum auth) |
 | Database | **MySQL**                      |
 
 Two roles are supported, mapping to the original login tables:
@@ -49,7 +49,7 @@ Hospital-System/
 
 ## Prerequisites
 
-- PHP **8.2+**, Composer
+- PHP **8.2+** (Laravel 12), Composer
 - Node.js **18+**, npm
 - MySQL / MariaDB
 
@@ -67,6 +67,12 @@ mysql -u root -e "CREATE DATABASE IF NOT EXISTS hmisphp"
 php artisan migrate --seed
 php artisan serve          # http://localhost:8000
 ```
+
+**Testing without MySQL:** the config also ships a `sqlite` connection, so
+the whole API can be exercised locally with
+`DB_CONNECTION=sqlite php artisan migrate --seed` and
+`DB_CONNECTION=sqlite php artisan serve` — no MySQL needed. Production
+stays on MySQL.
 
 ## Frontend setup
 

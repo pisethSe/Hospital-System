@@ -9,6 +9,7 @@ import {
   KeyRound,
   LayoutDashboard,
   LogOut,
+  Menu,
   MonitorCog,
   Pill,
   Stethoscope,

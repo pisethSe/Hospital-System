@@ -1,3 +1,4 @@
+import * as React from "react"
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva } from "class-variance-authority";
 import { cn } from "cn"
@@ -39,12 +40,17 @@ const buttonVariants = cva(
   }
 )
 
-function Button({
-  className,
-  variant = "default",
-  size = "default",
-  ...props
-}) {
+// forwardRef so the component can sit inside Base UI `render` props and
+// ordinary ref consumers without dropping the ref (React 18).
+const Button = React.forwardRef(function Button(
+  {
+    className,
+    variant = "default",
+    size = "default",
+    ...props
+  },
+  ref,
+) {
   return (
     <ButtonPrimitive
       data-slot="button"
@@ -52,6 +58,8 @@ function Button({
       {...props}
     />
   )
-}
+})
+
+Button.displayName = "Button"
 
 export { Button, buttonVariants }

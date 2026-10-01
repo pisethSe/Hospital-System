@@ -10,7 +10,10 @@ return [
         Sanctum::currentApplicationUrlWithPort(),
     ))),
 
-    'guard' => ['sanctum'],
+    // Guards to check for an already-authenticated session before
+    // falling back to bearer tokens. Must NOT include "sanctum"
+    // itself (that would recurse infinitely).
+    'guard' => ['web'],
 
     'expiration' => null,
 

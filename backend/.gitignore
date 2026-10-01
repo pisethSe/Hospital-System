@@ -3,6 +3,7 @@
 /public/build
 /public/hot
 /storage/*.key
+/storage/*.sqlite
 /storage/pail
 /vendor
 .env

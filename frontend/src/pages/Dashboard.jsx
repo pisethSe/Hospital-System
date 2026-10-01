@@ -105,7 +105,7 @@ export default function Dashboard() {
             <CardTitle>Latest registrations</CardTitle>
             <CardDescription className="mt-1">The most recent patients to join the books.</CardDescription>
           </div>
-          <Button variant="outline" size="sm" render={<Link to="./patients" />}>
+          <Button variant="outline" size="sm" nativeButton={false} render={<Link to="./patients" />}>
             All patients
           </Button>
         </CardHeader>
@@ -156,7 +156,7 @@ export default function Dashboard() {
               <CardTitle>Latest lab tests</CardTitle>
               <CardDescription className="mt-1">Requested panels and whether results are in.</CardDescription>
             </div>
-            <Button variant="outline" size="sm" render={<Link to="./lab-tests" />}>
+            <Button variant="outline" size="sm" nativeButton={false} render={<Link to="./lab-tests" />}>
               All lab tests
             </Button>
           </CardHeader>
@@ -200,7 +200,7 @@ export default function Dashboard() {
                 <CardTitle>Latest theatre records</CardTitle>
                 <CardDescription className="mt-1">Scheduled operations and their surgeons.</CardDescription>
               </div>
-              <Button variant="outline" size="sm" render={<Link to="./surgeries" />}>
+              <Button variant="outline" size="sm" nativeButton={false} render={<Link to="./surgeries" />}>
                 All theatre records
               </Button>
             </CardHeader>

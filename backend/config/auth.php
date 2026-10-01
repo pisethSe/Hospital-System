@@ -23,9 +23,12 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        // No provider here on purpose: tokens are issued to two separate
+        // models (his_admin and his_docs) and Sanctum resolves each
+        // tokenable by its own morph type. A fixed provider would reject
+        // doctor tokens (Guard::hasValidProvider).
         'sanctum' => [
             'driver' => 'sanctum',
-            'provider' => 'users',
         ],
     ],
 
