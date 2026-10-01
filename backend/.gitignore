@@ -4,6 +4,9 @@
 /public/hot
 /storage/*.key
 /storage/*.sqlite
+/storage/framework/cache/data/*
+/storage/app/private/
+
 /storage/pail
 /vendor
 .env
