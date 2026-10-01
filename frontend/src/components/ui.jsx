@@ -32,11 +32,35 @@ export {
 */
 
 /** Simple data-fetching hook: const { data, loading, error, reload } = useApi('/patients') */
-export function useApi(url, deps = []) {
+export function useApi(url) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  // Fetch when the URL changes — no synchronous setState in the effect;
+  // loading already starts true and clears when the fetch settles.
+  useEffect(() => {
+    let cancelled = false
+    api
+      .get(url)
+      .then((res) => {
+        if (cancelled) return
+        setData(res.data)
+        setError(null)
+      })
+      .catch((err) => {
+        if (cancelled) return
+        setError(err?.response?.data?.message || 'Could not load data.')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [url])
+
+  // Manual refresh from event handlers
   const reload = useCallback(() => {
     setLoading(true)
     setError(null)
@@ -46,11 +70,6 @@ export function useApi(url, deps = []) {
       .catch((err) => setError(err?.response?.data?.message || 'Could not load data.'))
       .finally(() => setLoading(false))
   }, [url])
-
-  useEffect(() => {
-    reload()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [url, ...deps])
 
   return { data, loading, error, reload }
 }

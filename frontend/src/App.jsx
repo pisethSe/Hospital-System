@@ -1,24 +1,28 @@
+import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import Layout from './components/Layout'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
-import Dashboard from './pages/Dashboard'
-import Patients from './pages/Patients'
-import Doctors from './pages/Doctors'
-import LabTests from './pages/LabTests'
-import Surgeries from './pages/Surgeries'
-import Prescriptions from './pages/Prescriptions'
-import Pharmacy from './pages/Pharmacy'
-import Vitals from './pages/Vitals'
-import MedicalRecords from './pages/MedicalRecords'
-import Payrolls from './pages/Payrolls'
-import Accounts from './pages/Accounts'
-import Equipments from './pages/Equipments'
-import Transfers from './pages/Transfers'
-import PasswordResets from './pages/PasswordResets'
-import Profile from './pages/Profile'
 import { FullScreenSpinner } from './components/ui'
+
+// Panel pages are split into separate chunks so the landing page and
+// sign-in stay small; each module loads on first visit.
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Patients = lazy(() => import('./pages/Patients'))
+const Doctors = lazy(() => import('./pages/Doctors'))
+const LabTests = lazy(() => import('./pages/LabTests'))
+const Surgeries = lazy(() => import('./pages/Surgeries'))
+const Prescriptions = lazy(() => import('./pages/Prescriptions'))
+const Pharmacy = lazy(() => import('./pages/Pharmacy'))
+const Vitals = lazy(() => import('./pages/Vitals'))
+const MedicalRecords = lazy(() => import('./pages/MedicalRecords'))
+const Payrolls = lazy(() => import('./pages/Payrolls'))
+const Accounts = lazy(() => import('./pages/Accounts'))
+const Equipments = lazy(() => import('./pages/Equipments'))
+const Transfers = lazy(() => import('./pages/Transfers'))
+const PasswordResets = lazy(() => import('./pages/PasswordResets'))
+const Profile = lazy(() => import('./pages/Profile'))
 
 function ProtectedRoute({ role, children }) {
   const { user, loading } = useAuth()
@@ -33,7 +37,8 @@ function ProtectedRoute({ role, children }) {
 
 export default function App() {
   return (
-    <Routes>
+    <Suspense fallback={<FullScreenSpinner />}>
+      <Routes>
       {/* Public */}
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
@@ -86,5 +91,6 @@ export default function App() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
   )
 }

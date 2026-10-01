@@ -137,7 +137,7 @@ function NavGroups({ nav }) {
 }
 
 function UserBlock() {
-  const { user, logout } = useAuth()
+  const { user, logout, isAdmin } = useAuth()
   const navigate = useNavigate()
 
   const initials = (user?.name || '?')

@@ -8,21 +8,31 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(Boolean(token))
 
-  // Restore the session from a saved token on first load
+  // Restore the session from a saved token on first load. No synchronous
+  // setState here — loading already starts false without a token.
   useEffect(() => {
     if (!token) {
-      setLoading(false)
       return
     }
+    let cancelled = false
     api
       .get('/me')
-      .then((res) => setUser(res.data.user))
+      .then((res) => {
+        if (cancelled) return
+        setUser(res.data.user)
+      })
       .catch(() => {
+        if (cancelled) return
         localStorage.removeItem('his_token')
         setToken(null)
         setUser(null)
       })
-      .finally(() => setLoading(false))
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [token])
 
   const login = async (role, credentials) => {
