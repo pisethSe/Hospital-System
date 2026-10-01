@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import api from '@/api/client'
 import {
+  ConfirmDialog,
   Empty,
   EmptyDescription,
   EmptyHeader,
@@ -60,6 +61,8 @@ export default function Surgeries() {
 
   const [addOpen, setAddOpen] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [confirm, setConfirm] = useState(null)
+  const [confirmBusy, setConfirmBusy] = useState(false)
   const [form, setForm] = useState({
     s_doc: '',
     s_pat_name: '',
@@ -99,6 +102,21 @@ export default function Surgeries() {
       reload()
     } catch (err) {
       toast.error(errorMessage(err))
+    }
+  }
+
+  const runRemove = async () => {
+    if (!confirm) return
+    setConfirmBusy(true)
+    try {
+      await api.delete(`/surgeries/${confirm.s_id}`)
+      toast.success('Theatre record removed')
+      setConfirm(null)
+      reload()
+    } catch (err) {
+      toast.error(errorMessage(err))
+    } finally {
+      setConfirmBusy(false)
     }
   }
 
@@ -145,6 +163,7 @@ export default function Surgeries() {
                 <TableHead>Ailment</TableHead>
                 <TableHead>Scheduled</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -173,11 +192,20 @@ export default function Surgeries() {
                       </SelectContent>
                     </Select>
                   </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setConfirm(s)}
+                    >
+                      Remove
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
               {surgeries.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6}>
+                  <TableCell colSpan={7}>
                     <Empty className="border-0">
                       <EmptyHeader>
                         <EmptyMedia variant="icon">
@@ -270,6 +298,16 @@ export default function Surgeries() {
           </form>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog
+        open={Boolean(confirm)}
+        onOpenChange={(open) => !open && setConfirm(null)}
+        destructive
+        busy={confirmBusy}
+        title="Remove this theatre record?"
+        description="The surgery record will be deleted. This cannot be undone."
+        confirmLabel="Remove record"
+        onConfirm={runRemove}
+      />
     </>
   )
 }

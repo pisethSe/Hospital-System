@@ -83,6 +83,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('vitals', [VitalController::class, 'store'])->middleware('role:admin,doctor');
 
     // Doctors could manage pharmaceuticals in the legacy panels
+    Route::get('pharmaceuticals', [PharmacyController::class, 'pharmaceuticals']);
     Route::post('pharmaceuticals', [PharmacyController::class, 'storePharmaceutical'])->middleware('role:admin,doctor');
     Route::put('pharmaceuticals/{pharmaceutical}', [PharmacyController::class, 'updatePharmaceutical'])->middleware('role:admin,doctor');
     Route::delete('pharmaceuticals/{pharmaceutical}', [PharmacyController::class, 'destroyPharmaceutical'])->middleware('role:admin,doctor');
