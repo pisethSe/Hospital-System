@@ -74,6 +74,10 @@ the whole API can be exercised locally with
 `DB_CONNECTION=sqlite php artisan serve` — no MySQL needed. Production
 stays on MySQL.
 
+**Profile photos:** uploaded photos are stored in
+`storage/app/public/users/` and served via the public disk — run
+`php artisan storage:link` once after setup so `/storage/...` resolves.
+
 ## Frontend setup
 
 ```bash

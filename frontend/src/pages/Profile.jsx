@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import api from '@/api/client'
 import { PageHeader, errorMessage } from '@/components/ui'
@@ -6,11 +6,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
 
 export default function Profile() {
   const { user, isAdmin } = useAuth()
+  const fileInput = useRef(null)
 
   const [form, setForm] = useState({
     first_name: '',
@@ -20,11 +22,41 @@ export default function Profile() {
   const [pwd, setPwd] = useState('')
   const [busyProfile, setBusyProfile] = useState(false)
   const [busyPwd, setBusyPwd] = useState(false)
+  const [busyPhoto, setBusyPhoto] = useState(false)
+  const [avatar, setAvatar] = useState(user?.avatar || null)
 
   const current = {
     first_name: user?.name?.split(' ').slice(0, -1).join(' ') || '',
     last_name: user?.name?.split(' ').slice(-1)[0] || '',
     email: user?.email || '',
+  }
+
+  const initials = (user?.name || '?')
+    .split(' ')
+    .map((part) => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+
+  const uploadPhoto = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setBusyPhoto(true)
+    try {
+      const data = new FormData()
+      data.append('photo', file)
+      const res = await api.post('/profile/avatar', data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      setAvatar(res.data.avatar)
+      toast.success('Photo uploaded')
+    } catch (err) {
+      toast.error(errorMessage(err))
+    } finally {
+      setBusyPhoto(false)
+      if (fileInput.current) fileInput.current.value = ''
+    }
   }
 
   const saveProfile = async (e) => {
@@ -83,7 +115,37 @@ export default function Profile() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={saveProfile}>
+            <div className="flex items-center gap-4 pb-5">
+              <Avatar className="size-14">
+                {avatar && <img src={`/storage/${avatar}`} alt="Profile photo" className="size-full object-cover" />}
+                {!avatar && <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">{initials}</AvatarFallback>}
+              </Avatar>
+              <div>
+                <p className="text-sm font-medium">
+                  {avatar ? 'Photo on file' : 'No photo yet'}
+                </p>
+                <div className="mt-1.5">
+                  <input
+                    ref={fileInput}
+                    type="file"
+                    accept="image/png,image/jpeg,image/gif,image/webp"
+                    className="hidden"
+                    onChange={uploadPhoto}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={busyPhoto}
+                    onClick={() => fileInput.current?.click()}
+                  >
+                    {busyPhoto ? 'Uploading' : 'Upload photo'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <Separator />
+            <form onSubmit={saveProfile} className="pt-5">
               <FieldGroup className="gap-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field>

@@ -153,6 +153,37 @@ class AuthController extends Controller
         return response()->json(['message' => 'Password Updated']);
     }
 
+    /**
+     * Upload the signed-in user's profile photo. Legacy logic preserved
+     * from his_admin_account.php / his_doc_update-account.php: the photo
+     * is stored under users/ with its original file name and the path is
+     * saved in the dpic column.
+     */
+    public function uploadAvatar(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'photo' => ['required', 'image', 'mimes:jpg,jpeg,png,gif,webp', 'max:4096'],
+        ]);
+
+        $user = $request->user();
+
+        // Legacy behaviour: keep the original file name.
+        $file = $data['photo'];
+        $path = $file->storeAs('users', $file->getClientOriginalName(), 'public');
+
+        if ($user instanceof Admin) {
+            Admin::where('ad_id', $user->ad_id)->update(['ad_dpic' => $path]);
+        } else {
+            Doctor::where('doc_number', $user->doc_number)->update(['doc_dpic' => $path]);
+        }
+
+        return response()->json([
+            'message' => 'Photo Uploaded',
+            'avatar' => $path,
+            'url' => asset("storage/{$path}"),
+        ]);
+    }
+
     private function profile($user, string $role): array
     {
         if ($role === 'admin') {

@@ -43,6 +43,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Own profile (legacy his_admin_account.php / his_doc_update-account.php)
     Route::put('profile', [AuthController::class, 'updateProfile']);
     Route::put('profile/password', [AuthController::class, 'updatePassword']);
+    Route::post('profile/avatar', [AuthController::class, 'uploadAvatar']);
 
     // Dashboard
     Route::get('dashboard', [DashboardController::class, 'index']);
