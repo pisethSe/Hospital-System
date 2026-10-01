@@ -67,11 +67,18 @@ class PasswordResetController extends Controller
         $newPassword = $data['pwd'] ?? $reset->pwd;
         $status = $data['status'] ?? 'Approved';
 
-        Doctor::where('doc_email', $reset->email)
-            ->update(['doc_pwd' => HisPassword::hash($newPassword)]);
+        $doctors = Doctor::where('doc_email', $reset->email)->get();
+
+        $doctors->each(function ($doctor) use ($newPassword) {
+            $doctor->update(['doc_pwd' => HisPassword::hash($newPassword)]);
+        });
 
         PwdReset::where('email', $reset->email)
             ->update(['status' => $status]);
+
+        // Security: revoke existing tokens for the affected doctors so a
+        // leaked token cannot outlive the password change.
+        $doctors->each(fn ($doctor) => $doctor->tokens()->delete());
 
         return response()->json(['message' => 'Password reset approved']);
     }

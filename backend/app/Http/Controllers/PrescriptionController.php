@@ -61,7 +61,11 @@ class PrescriptionController extends Controller
             'medicines.*.time' => ['required_with:medicines', 'string', 'max:100'],
         ]);
 
-        $data['pres_number'] = $data['pres_number'] ?? HisCode::prescriptionNumber();
+        if (!isset($data['pres_number'])) {
+            do {
+                $data['pres_number'] = HisCode::prescriptionNumber();
+            } while (Prescription::where('pres_number', $data['pres_number'])->exists());
+        }
 
         $prescription = Prescription::create(Arr::except($data, 'medicines'));
 

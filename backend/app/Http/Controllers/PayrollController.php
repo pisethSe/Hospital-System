@@ -51,7 +51,11 @@ class PayrollController extends Controller
             'pay_number' => ['nullable', 'string', 'max:200'],
         ]);
 
-        $data['pay_number'] = $data['pay_number'] ?? HisCode::payrollNumber();
+        if (!isset($data['pay_number'])) {
+            do {
+                $data['pay_number'] = HisCode::payrollNumber();
+            } while (Payroll::where('pay_number', $data['pay_number'])->exists());
+        }
 
         $payroll = Payroll::create($data);
 

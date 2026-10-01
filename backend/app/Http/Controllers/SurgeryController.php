@@ -51,7 +51,11 @@ class SurgeryController extends Controller
             's_number' => ['nullable', 'string', 'max:200'],
         ]);
 
-        $data['s_number'] = $data['s_number'] ?? HisCode::surgeryNumber();
+        if (!isset($data['s_number'])) {
+            do {
+                $data['s_number'] = HisCode::surgeryNumber();
+            } while (Surgery::where('s_number', $data['s_number'])->exists());
+        }
         $data['s_pat_status'] = $data['s_pat_status'] ?? 'Pending';
 
         $surgery = Surgery::create($data);

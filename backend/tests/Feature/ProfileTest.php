@@ -80,6 +80,27 @@ class ProfileTest extends TestCase
         ])->assertOk();
     }
 
+    public function test_password_change_revokes_existing_tokens(): void
+    {
+        // Security: a leaked token cannot outlive a password change.
+        $admin = Admin::create([
+            'ad_fname' => 'Admin', 'ad_lname' => 'User',
+            'ad_email' => 'admin@hospital.com',
+            'ad_pwd' => HisPassword::hash('admin123'),
+        ]);
+
+        $oldToken = $this->tokenFor($admin, 'admin');
+
+        $this->withToken($oldToken)
+            ->putJson('/api/profile/password', ['password' => 'newpass456'])
+            ->assertOk();
+
+        // The old token no longer works.
+        $this->freshAuth()->withToken($oldToken)
+            ->getJson('/api/me')
+            ->assertStatus(401);
+    }
+
     public function test_profile_requires_authentication(): void
     {
         $this->putJson('/api/profile', ['first_name' => 'X'])->assertStatus(401);

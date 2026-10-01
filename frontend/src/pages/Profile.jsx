@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import api from '@/api/client'
 import { PageHeader, errorMessage } from '@/components/ui'
@@ -11,7 +12,8 @@ import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
 
 export default function Profile() {
-  const { user, isAdmin } = useAuth()
+  const { user, isAdmin, logout } = useAuth()
+  const navigate = useNavigate()
   const fileInput = useRef(null)
 
   const [form, setForm] = useState({
@@ -87,13 +89,12 @@ export default function Profile() {
     setBusyPwd(true)
     try {
       await api.put('/profile/password', { password: pwd })
-      toast.success('Password updated', {
-        description: 'Use the new password next time you sign in.',
-      })
-      setPwd('')
+      toast.success('Password updated')
+      // All tokens were revoked with the password change — sign back in.
+      await logout()
+      navigate('/login')
     } catch (err) {
       toast.error(errorMessage(err))
-    } finally {
       setBusyPwd(false)
     }
   }

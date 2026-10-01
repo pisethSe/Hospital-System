@@ -150,6 +150,10 @@ class AuthController extends Controller
                 ->update(['doc_pwd' => HisPassword::hash($data['password'])]);
         }
 
+        // Security: after a password change, revoke every existing token
+        // so a leaked token cannot outlive the new password.
+        $user->tokens()->delete();
+
         return response()->json(['message' => 'Password Updated']);
     }
 
@@ -167,9 +171,12 @@ class AuthController extends Controller
 
         $user = $request->user();
 
-        // Legacy behaviour: keep the original file name.
+        // Legacy behaviour: stored under users/ — but with a unique prefix
+        // so two people uploading the same file name cannot overwrite
+        // each other's photos.
         $file = $data['photo'];
-        $path = $file->storeAs('users', $file->getClientOriginalName(), 'public');
+        $name = uniqid() . '_' . $file->getClientOriginalName();
+        $path = $file->storeAs('users', $name, 'public');
 
         if ($user instanceof Admin) {
             Admin::where('ad_id', $user->ad_id)->update(['ad_dpic' => $path]);

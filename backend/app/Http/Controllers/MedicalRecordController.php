@@ -50,7 +50,11 @@ class MedicalRecordController extends Controller
             'mdr_number' => ['nullable', 'string', 'max:200'],
         ]);
 
-        $data['mdr_number'] = $data['mdr_number'] ?? HisCode::medicalRecordNumber();
+        if (!isset($data['mdr_number'])) {
+            do {
+                $data['mdr_number'] = HisCode::medicalRecordNumber();
+            } while (MedicalRecord::where('mdr_number', $data['mdr_number'])->exists());
+        }
 
         $record = MedicalRecord::create($data);
 

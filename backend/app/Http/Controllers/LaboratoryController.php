@@ -54,7 +54,11 @@ class LaboratoryController extends Controller
             'lab_number' => ['nullable', 'string', 'max:200'],
         ]);
 
-        $data['lab_number'] = $data['lab_number'] ?? HisCode::labNumber();
+        if (!isset($data['lab_number'])) {
+            do {
+                $data['lab_number'] = HisCode::labNumber();
+            } while (Laboratory::where('lab_number', $data['lab_number'])->exists());
+        }
         $data['lab_pat_number'] = $data['lab_pat_number'] ?? '';
 
         $laboratory = Laboratory::create($data);

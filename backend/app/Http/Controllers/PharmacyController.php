@@ -49,7 +49,11 @@ class PharmacyController extends Controller
             'phar_bcode' => ['nullable', 'string', 'max:200'],
         ]);
 
-        $data['phar_bcode'] = $data['phar_bcode'] ?? HisCode::numericCode();
+        if (!isset($data['phar_bcode'])) {
+            do {
+                $data['phar_bcode'] = HisCode::numericCode();
+            } while (Pharmaceutical::where('phar_bcode', $data['phar_bcode'])->exists());
+        }
 
         $pharmaceutical = Pharmaceutical::create($data);
 
@@ -178,7 +182,11 @@ class PharmacyController extends Controller
             'v_number' => ['nullable', 'string', 'max:200'],
         ]);
 
-        $data['v_number'] = $data['v_number'] ?? HisCode::vendorNumber();
+        if (!isset($data['v_number'])) {
+            do {
+                $data['v_number'] = HisCode::vendorNumber();
+            } while (Vendor::where('v_number', $data['v_number'])->exists());
+        }
 
         $vendor = Vendor::create($data);
 

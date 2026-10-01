@@ -47,7 +47,11 @@ class EquipmentController extends Controller
             'eqp_code' => ['nullable', 'string', 'max:200'],
         ]);
 
-        $data['eqp_code'] = $data['eqp_code'] ?? HisCode::numericCode();
+        if (!isset($data['eqp_code'])) {
+            do {
+                $data['eqp_code'] = HisCode::numericCode();
+            } while (Equipment::where('eqp_code', $data['eqp_code'])->exists());
+        }
 
         $equipment = Equipment::create($data);
 

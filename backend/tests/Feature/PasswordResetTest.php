@@ -105,4 +105,34 @@ class PasswordResetTest extends TestCase
         $this->assertFalse(HisPassword::verify('original123', $doctor->getAuthPassword()));
         $this->assertSame('Approved', $reset->fresh()->status);
     }
+
+    public function test_approval_revokes_the_doctors_existing_tokens(): void
+    {
+        $doctor = Doctor::create([
+            'doc_fname' => 'Reset',
+            'doc_lname' => 'Doc',
+            'doc_email' => 'reset.doc@hospital.com',
+            'doc_number' => 'rst1',
+            'doc_pwd' => HisPassword::hash('original123'),
+        ]);
+
+        $reset = PwdReset::create([
+            'email' => 'reset.doc@hospital.com',
+            'token' => sha1(md5('token123')),
+            'status' => 'Pending',
+            'pwd' => 'temppass12',
+        ]);
+
+        $doctorOldToken = $this->tokenFor($doctor, 'doctor');
+
+        // The admin approves the reset.
+        $this->withToken($this->tokenFor($this->admin(), 'admin'))
+            ->postJson("/api/password-resets/{$reset->id}/approve", ['status' => 'Approved'])
+            ->assertOk();
+
+        // The doctor's old token no longer works.
+        $this->freshAuth()->withToken($doctorOldToken)
+            ->getJson('/api/me')
+            ->assertStatus(401);
+    }
 }

@@ -48,7 +48,11 @@ class AccountController extends Controller
             'acc_number' => ['nullable', 'string', 'max:200'],
         ]);
 
-        $data['acc_number'] = $data['acc_number'] ?? HisCode::numericCode();
+        if (!isset($data['acc_number'])) {
+            do {
+                $data['acc_number'] = HisCode::numericCode();
+            } while (Account::where('acc_number', $data['acc_number'])->exists());
+        }
 
         $account = Account::create($data);
 

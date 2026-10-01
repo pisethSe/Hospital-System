@@ -65,7 +65,13 @@ class PatientController extends Controller
             'pat_number' => ['nullable', 'string', 'max:200'],
         ]);
 
-        $data['pat_number'] = $data['pat_number'] ?? HisCode::patientNumber();
+        if (!isset($data['pat_number'])) {
+            // Legacy algorithm, retried on collision: duplicate patient
+            // numbers would corrupt the records that reference them.
+            do {
+                $data['pat_number'] = HisCode::patientNumber();
+            } while (Patient::where('pat_number', $data['pat_number'])->exists());
+        }
 
         $patient = Patient::create($data);
 

@@ -47,7 +47,11 @@ class VitalController extends Controller
             'vit_number' => ['nullable', 'string', 'max:200'],
         ]);
 
-        $data['vit_number'] = $data['vit_number'] ?? HisCode::vitalNumber();
+        if (!isset($data['vit_number'])) {
+            do {
+                $data['vit_number'] = HisCode::vitalNumber();
+            } while (Vital::where('vit_number', $data['vit_number'])->exists());
+        }
 
         $vital = Vital::create($data);
 

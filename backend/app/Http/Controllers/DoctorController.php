@@ -60,7 +60,12 @@ class DoctorController extends Controller
             'doc_email' => $data['doc_email'] ?? null,
             'doc_dept' => $data['doc_dept'] ?? null,
             'doc_dpic' => $data['doc_dpic'] ?? null,
-            'doc_number' => $data['doc_number'] ?? HisCode::generate(),
+            'doc_number' => $data['doc_number'] ?? (function () {
+                do {
+                    $number = HisCode::generate();
+                } while (Doctor::where('doc_number', $number)->exists());
+                return $number;
+            })(),
             'doc_pwd' => HisPassword::hash($data['password']),
         ]);
 

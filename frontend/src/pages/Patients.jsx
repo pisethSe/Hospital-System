@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import api from '@/api/client'
 import {
@@ -76,6 +76,17 @@ export default function Patients() {
 
   const patients = data?.data?.data || []
   const meta = data?.data
+
+  // After removing the last record on a page, snap back to the last
+  // valid page instead of showing an empty one.
+  useEffect(() => {
+    if (!loading && meta && meta.total > 0 && meta.current_page > meta.last_page) {
+      // Deliberate one-time correction after fresh data has loaded,
+      // not a cascading render.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPage(meta.last_page)
+    }
+  }, [loading, meta])
 
   const openAdd = () => {
     setForm(emptyForm)
