@@ -28,6 +28,12 @@ class HisCode
     public const DIGITS = '0123456789';
 
     /**
+     * Legacy password-reset charset (his_admin_pwd_reset.php):
+     * digits + upper + lower, used for temp passwords and tokens.
+     */
+    public const RESET_CHARSET = '0123456789QWERTYUIOPPLKJHGFDSAZCVBNMqwertyuioplkjhgfdsazxcvbnm';
+
+    /**
      * Generate a legacy-style random code.
      *
      * Replicates: substr(str_shuffle($charset), 1, $length)
@@ -107,5 +113,23 @@ class HisCode
     public static function numericCode(int $length = 5): string
     {
         return self::generate($length, self::DIGITS);
+    }
+
+    /**
+     * Legacy temporary password for password resets (10 chars).
+     * Replicates: substr(str_shuffle(RESET_CHARSET), 1, $length_pwd)
+     */
+    public static function resetPassword(): string
+    {
+        return self::generate(10, self::RESET_CHARSET);
+    }
+
+    /**
+     * Legacy reset token (30 chars).
+     * Replicates: substr(str_shuffle(RESET_CHARSET), 1, $length_token)
+     */
+    public static function resetToken(): string
+    {
+        return self::generate(30, self::RESET_CHARSET);
     }
 }

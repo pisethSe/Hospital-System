@@ -11,6 +11,13 @@ import Surgeries from './pages/Surgeries'
 import Prescriptions from './pages/Prescriptions'
 import Pharmacy from './pages/Pharmacy'
 import Vitals from './pages/Vitals'
+import MedicalRecords from './pages/MedicalRecords'
+import Payrolls from './pages/Payrolls'
+import Accounts from './pages/Accounts'
+import Equipments from './pages/Equipments'
+import Transfers from './pages/Transfers'
+import PasswordResets from './pages/PasswordResets'
+import Profile from './pages/Profile'
 import { FullScreenSpinner } from './components/ui'
 
 function ProtectedRoute({ role, children }) {
@@ -48,6 +55,13 @@ export default function App() {
         <Route path="prescriptions" element={<Prescriptions />} />
         <Route path="pharmacy" element={<Pharmacy />} />
         <Route path="vitals" element={<Vitals />} />
+        <Route path="medical-records" element={<MedicalRecords />} />
+        <Route path="transfers" element={<Transfers />} />
+        <Route path="payrolls" element={<Payrolls />} />
+        <Route path="accounts" element={<Accounts />} />
+        <Route path="equipments" element={<Equipments />} />
+        <Route path="password-resets" element={<PasswordResets />} />
+        <Route path="profile" element={<Profile />} />
       </Route>
 
       {/* Doctor panel (legacy his_docs accounts, login by doctor ID) */}
@@ -64,6 +78,10 @@ export default function App() {
         <Route path="lab-tests" element={<LabTests />} />
         <Route path="prescriptions" element={<Prescriptions />} />
         <Route path="vitals" element={<Vitals />} />
+        <Route path="transfers" element={<Transfers />} />
+        <Route path="payrolls" element={<Payrolls />} />
+        <Route path="equipments" element={<Equipments />} />
+        <Route path="profile" element={<Profile />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

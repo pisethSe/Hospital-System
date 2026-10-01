@@ -59,6 +59,41 @@ class PharmacyController extends Controller
         ], 201);
     }
 
+    /**
+     * Update a pharmaceutical. Legacy logic preserved from
+     * his_doc_update_single_pharm.php: name, description, quantity,
+     * category and vendor are updated by barcode — the barcode itself
+     * never changes.
+     */
+    public function updatePharmaceutical(Request $request, Pharmaceutical $pharmaceutical): JsonResponse
+    {
+        $data = $request->validate([
+            'phar_name' => ['sometimes', 'string', 'max:200'],
+            'phar_desc' => ['sometimes', 'nullable', 'string'],
+            'phar_qty' => ['sometimes', 'nullable', 'string', 'max:200'],
+            'phar_cat' => ['sometimes', 'nullable', 'string', 'max:200'],
+            'phar_vendor' => ['sometimes', 'nullable', 'string', 'max:200'],
+        ]);
+
+        $pharmaceutical->update($data);
+
+        return response()->json([
+            'message' => 'Pharmaceutical Updated',
+            'data' => $pharmaceutical->fresh(),
+        ]);
+    }
+
+    /**
+     * Remove a pharmaceutical. Legacy logic preserved: the manage pages
+     * deleted pharmaceutical rows (by id).
+     */
+    public function destroyPharmaceutical(Pharmaceutical $pharmaceutical): JsonResponse
+    {
+        $pharmaceutical->delete();
+
+        return response()->json(['message' => 'Pharmaceutical Removed']);
+    }
+
     /*
     |----------------------------------------------------------------------
     | Pharmaceutical categories
@@ -86,6 +121,32 @@ class PharmacyController extends Controller
             'message' => 'Category Added',
             'data' => $category,
         ], 201);
+    }
+
+    /**
+     * Update a category. Legacy logic preserved: the original update set
+     * vendor and description by category name — the name never changes.
+     */
+    public function updateCategory(Request $request, PharmaceuticalCategory $category): JsonResponse
+    {
+        $data = $request->validate([
+            'pharm_cat_vendor' => ['sometimes', 'nullable', 'string', 'max:200'],
+            'pharm_cat_desc' => ['sometimes', 'nullable', 'string'],
+        ]);
+
+        $category->update($data);
+
+        return response()->json([
+            'message' => 'Category Updated',
+            'data' => $category->fresh(),
+        ]);
+    }
+
+    public function destroyCategory(PharmaceuticalCategory $category): JsonResponse
+    {
+        $category->delete();
+
+        return response()->json(['message' => 'Category Removed']);
     }
 
     /*
@@ -125,5 +186,28 @@ class PharmacyController extends Controller
             'message' => 'Vendor Added',
             'data' => $vendor,
         ], 201);
+    }
+
+    /**
+     * Update a vendor. Legacy logic preserved from
+     * his_admin_update_single_vendor.php: name, address, email, phone and
+     * description are updated by vendor number — the number never changes.
+     */
+    public function updateVendor(Request $request, Vendor $vendor): JsonResponse
+    {
+        $data = $request->validate([
+            'v_name' => ['sometimes', 'string', 'max:200'],
+            'v_adr' => ['sometimes', 'nullable', 'string', 'max:200'],
+            'v_email' => ['sometimes', 'nullable', 'email', 'max:200'],
+            'v_phone' => ['sometimes', 'nullable', 'string', 'max:200'],
+            'v_desc' => ['sometimes', 'nullable', 'string'],
+        ]);
+
+        $vendor->update($data);
+
+        return response()->json([
+            'message' => 'Vendor Updated',
+            'data' => $vendor->fresh(),
+        ]);
     }
 }

@@ -80,4 +80,29 @@ class PrescriptionController extends Controller
             'data' => $prescription->load('medicines'),
         ], 201);
     }
+
+    /**
+     * Update a prescription. Legacy logic preserved from
+     * his_admin_upate_single_pres.php / his_doc_upate_single_pres.php:
+     * the patient name, type, address, age, ailment and instructions are
+     * updated by prescription number — the number itself never changes.
+     */
+    public function update(Request $request, Prescription $prescription): JsonResponse
+    {
+        $data = $request->validate([
+            'pres_pat_name' => ['sometimes', 'string', 'max:200'],
+            'pres_pat_type' => ['sometimes', 'nullable', 'string', 'max:200'],
+            'pres_pat_addr' => ['sometimes', 'nullable', 'string', 'max:200'],
+            'pres_pat_age' => ['sometimes', 'nullable', 'string', 'max:200'],
+            'pres_pat_ailment' => ['sometimes', 'nullable', 'string', 'max:200'],
+            'pres_ins' => ['sometimes', 'nullable', 'string'],
+        ]);
+
+        $prescription->update($data);
+
+        return response()->json([
+            'message' => 'Prescription Updated',
+            'data' => $prescription->fresh()->load('medicines'),
+        ]);
+    }
 }

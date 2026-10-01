@@ -91,6 +91,68 @@ class AuthController extends Controller
         return response()->json(['message' => 'Logged out.']);
     }
 
+    /**
+     * Update the signed-in user's own profile. Legacy logic preserved
+     * from his_admin_account.php / his_doc_update-account.php: names,
+     * email and avatar are updated by the account's own id.
+     */
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $data = $request->validate([
+            'first_name' => ['sometimes', 'string', 'max:200'],
+            'last_name' => ['sometimes', 'nullable', 'string', 'max:200'],
+            'email' => ['sometimes', 'email', 'max:200'],
+            'avatar' => ['sometimes', 'nullable', 'string', 'max:1000'],
+        ]);
+
+        if ($user instanceof Admin) {
+            $user->update([
+                'ad_fname' => $data['first_name'] ?? $user->ad_fname,
+                'ad_lname' => array_key_exists('last_name', $data) ? $data['last_name'] : $user->ad_lname,
+                'ad_email' => $data['email'] ?? $user->ad_email,
+                'ad_dpic' => array_key_exists('avatar', $data) ? $data['avatar'] : $user->ad_dpic,
+            ]);
+        } else {
+            $user->update([
+                'doc_fname' => $data['first_name'] ?? $user->doc_fname,
+                'doc_lname' => array_key_exists('last_name', $data) ? $data['last_name'] : $user->doc_lname,
+                'doc_email' => $data['email'] ?? $user->doc_email,
+                'doc_dpic' => array_key_exists('avatar', $data) ? $data['avatar'] : $user->doc_dpic,
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Account Updated',
+            'user' => $this->profile($user->fresh(), $user instanceof Admin ? 'admin' : 'doctor'),
+        ]);
+    }
+
+    /**
+     * Update the signed-in user's own password. Legacy logic preserved:
+     * admins update by their ad_id, doctors by their doc_number, and the
+     * password is double-encrypted with sha1(md5()) in both cases.
+     */
+    public function updatePassword(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'password' => ['required', 'string', 'min:3'],
+        ]);
+
+        $user = $request->user();
+
+        if ($user instanceof Admin) {
+            Admin::where('ad_id', $user->ad_id)
+                ->update(['ad_pwd' => HisPassword::hash($data['password'])]);
+        } else {
+            Doctor::where('doc_number', $user->doc_number)
+                ->update(['doc_pwd' => HisPassword::hash($data['password'])]);
+        }
+
+        return response()->json(['message' => 'Password Updated']);
+    }
+
     private function profile($user, string $role): array
     {
         if ($role === 'admin') {

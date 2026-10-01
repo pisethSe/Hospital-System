@@ -44,6 +44,13 @@ export function AuthProvider({ children }) {
     setUser(null)
   }
 
+  // Profile page updates dispatch this event to refresh the session user
+  useEffect(() => {
+    const handler = (event) => setUser(event.detail)
+    window.addEventListener('profile-updated', handler)
+    return () => window.removeEventListener('profile-updated', handler)
+  }, [])
+
   const value = useMemo(
     () => ({ token, user, loading, login, logout, isAdmin: user?.role === 'admin', isDoctor: user?.role === 'doctor' }),
     [token, user, loading],

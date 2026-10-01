@@ -1,14 +1,20 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
+  Banknote,
+  BookOpen,
   ClipboardList,
+  FileText,
   FlaskConical,
   HeartPulse,
+  KeyRound,
   LayoutDashboard,
   LogOut,
-  Menu,
+  MonitorCog,
   Pill,
   Stethoscope,
   Syringe,
+  Truck,
+  UserRound,
   Users,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
@@ -47,6 +53,8 @@ const adminNav = [
       { to: '/admin/lab-tests', label: 'Laboratory', icon: FlaskConical },
       { to: '/admin/surgeries', label: 'Surgery', icon: Syringe },
       { to: '/admin/vitals', label: 'Vitals', icon: HeartPulse },
+      { to: '/admin/medical-records', label: 'Medical records', icon: FileText },
+      { to: '/admin/transfers', label: 'Transfers', icon: Truck },
     ],
   },
   {
@@ -54,6 +62,15 @@ const adminNav = [
     items: [
       { to: '/admin/prescriptions', label: 'Prescriptions', icon: ClipboardList },
       { to: '/admin/pharmacy', label: 'Medicines & stock', icon: Pill },
+    ],
+  },
+  {
+    group: 'Operations',
+    items: [
+      { to: '/admin/payrolls', label: 'Payroll', icon: Banknote },
+      { to: '/admin/accounts', label: 'Accounts', icon: BookOpen },
+      { to: '/admin/equipments', label: 'Equipment', icon: MonitorCog },
+      { to: '/admin/password-resets', label: 'Password resets', icon: KeyRound },
     ],
   },
 ]
@@ -71,12 +88,20 @@ const doctorNav = [
       { to: '/doctor/patients', label: 'Patients', icon: Users },
       { to: '/doctor/lab-tests', label: 'Laboratory', icon: FlaskConical },
       { to: '/doctor/vitals', label: 'Vitals', icon: HeartPulse },
+      { to: '/doctor/transfers', label: 'Transfers', icon: Truck },
     ],
   },
   {
     group: 'Pharmacy',
     items: [
       { to: '/doctor/prescriptions', label: 'Prescriptions', icon: ClipboardList },
+    ],
+  },
+  {
+    group: 'Operations',
+    items: [
+      { to: '/doctor/equipments', label: 'Equipment', icon: MonitorCog },
+      { to: '/doctor/payrolls', label: 'Payroll', icon: Banknote },
     ],
   },
 ]
@@ -148,6 +173,10 @@ function UserBlock() {
       <DropdownMenuContent side="top" align="start" className="w-56">
         <DropdownMenuLabel>{user?.email || user?.number}</DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => navigate(isAdmin ? '/admin/profile' : '/doctor/profile')}>
+          <UserRound className="size-4" />
+          My account
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={handleLogout}>
           <LogOut className="size-4" />
           Sign out

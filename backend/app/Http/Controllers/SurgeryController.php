@@ -82,4 +82,15 @@ class SurgeryController extends Controller
             'data' => $surgery->fresh(),
         ]);
     }
+
+    /**
+     * Remove a theatre record. Legacy logic preserved: the original
+     * manage pages deleted surgery rows (by surgery number).
+     */
+    public function destroy(Surgery $surgery): JsonResponse
+    {
+        $surgery->delete();
+
+        return response()->json(['message' => 'Surgery Record Removed']);
+    }
 }

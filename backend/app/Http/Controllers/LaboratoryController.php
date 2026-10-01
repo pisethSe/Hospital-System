@@ -82,4 +82,27 @@ class LaboratoryController extends Controller
             'data' => $laboratory->fresh(),
         ]);
     }
+
+    /**
+     * Update a lab test. Legacy logic preserved: the original update set
+     * the patient name, ailment, patient number, tests and results by lab
+     * number — the lab number itself never changes.
+     */
+    public function update(Request $request, Laboratory $laboratory): JsonResponse
+    {
+        $data = $request->validate([
+            'lab_pat_name' => ['sometimes', 'string', 'max:200'],
+            'lab_pat_ailment' => ['sometimes', 'nullable', 'string', 'max:200'],
+            'lab_pat_number' => ['sometimes', 'nullable', 'string', 'max:200'],
+            'lab_pat_tests' => ['sometimes', 'string'],
+            'lab_pat_results' => ['sometimes', 'nullable', 'string'],
+        ]);
+
+        $laboratory->update($data);
+
+        return response()->json([
+            'message' => 'Lab Test Updated',
+            'data' => $laboratory->fresh(),
+        ]);
+    }
 }
