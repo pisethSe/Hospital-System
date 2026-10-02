@@ -5,6 +5,10 @@
 /storage/*.key
 /storage/*.sqlite
 /storage/framework/cache/data/*
+/storage/framework/views/*
+/storage/framework/sessions/*
+/storage/framework/cache/data/*
+
 /storage/app/private/
 
 /storage/pail
