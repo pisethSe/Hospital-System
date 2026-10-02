@@ -28,7 +28,7 @@ Node/npm are not installed globally on this machine. A portable Node.js
 lives in the home folder — always run commands with it on PATH:
 
 ```bash
-export PATH="$HOME/hospital-tools/node-v20.18.1-darwin-arm64/bin:$PATH"
+export PATH="$HOME/hospital-tools/node-v22.22.0-darwin-arm64/bin:$PATH"
 ```
 
 Frontend dev server:

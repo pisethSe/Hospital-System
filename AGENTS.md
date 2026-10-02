@@ -32,7 +32,7 @@ DATABASE FILE/   Legacy MySQL dump (reference only)
 ## Environment notes
 
 - Node/npm are not installed globally. Use the portable Node:
-  `export PATH="$HOME/hospital-tools/node-v20.18.1-darwin-arm64/bin:$PATH"`
+  `export PATH="$HOME/hospital-tools/node-v22.22.0-darwin-arm64/bin:$PATH"`
 - PHP 8.2+, Composer and MySQL are not installed on this machine. If the
   user asks to run the backend, they must install those first.
 - Frontend dev server: `cd frontend && npm run dev` → http://localhost:5173
