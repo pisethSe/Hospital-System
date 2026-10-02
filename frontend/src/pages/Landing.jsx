@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ClipboardList,
@@ -57,6 +58,50 @@ const features = [
       'Keep medicines, categories, vendors and quantities in one inventory, with barcodes generated for you.',
   },
 ]
+
+/*
+ * The slogan at the end of the headline cycles through phrases with a
+ * smooth vertical loop: each phrase slides down and fades out, the next
+ * slides up into place. Static when reduced motion is preferred.
+ */
+const SLOGANS = ['one system.', 'one record.', 'one team.', 'one place.']
+
+function SloganLoop() {
+  const [index, setIndex] = useState(0)
+  const [shown, setShown] = useState(true)
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    let swapTimer
+    const timer = setInterval(() => {
+      setShown(false)
+      swapTimer = setTimeout(() => {
+        setIndex((i) => (i + 1) % SLOGANS.length)
+        setShown(true)
+      }, 480)
+    }, 2800)
+    return () => {
+      clearInterval(timer)
+      clearTimeout(swapTimer)
+    }
+  }, [])
+
+  return (
+    <span className="relative inline-block align-baseline">
+      {/* Stable phrase for screen readers */}
+      <span className="sr-only">{SLOGANS[0]}</span>
+      {/* Fixed-width slot so the line never jumps as words change */}
+      <span
+        aria-hidden="true"
+        className={`inline-block min-w-[5.6em] text-left text-primary transition-all duration-500 ease-in-out ${
+          shown ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
+        }`}
+      >
+        {SLOGANS[index]}
+      </span>
+    </span>
+  )
+}
 
 function VitalsStrip() {
   return (
@@ -143,7 +188,7 @@ export default function Landing() {
         <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_1fr]">
           <div>
             <h1 className="text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl">
-              Every patient, prescription and lab result in one system.
+              Every patient, prescription and lab result in <SloganLoop />
             </h1>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground">
               Hospital System keeps the front desk, doctors, laboratory and pharmacy working from the
