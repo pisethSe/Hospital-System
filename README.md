@@ -74,9 +74,38 @@ the whole API can be exercised locally with
 `DB_CONNECTION=sqlite php artisan serve` — no MySQL needed. Production
 stays on MySQL.
 
+## Production setup
+
+The shipped configuration runs in production mode (`APP_ENV=production`,
+`APP_DEBUG=false`) against a dedicated MySQL user (`hospital_app`) with
+full privileges on the `hmisphp` database only — never the root user.
+
+Setup steps:
+
+```bash
+mysql -u root -e "
+CREATE DATABASE IF NOT EXISTS hmisphp CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER IF NOT EXISTS 'hospital_app'@'localhost' IDENTIFIED BY 'your-password';
+CREATE USER IF NOT EXISTS 'hospital_app'@'127.0.0.1' IDENTIFIED BY 'your-password';
+GRANT ALL PRIVILEGES ON hmisphp.* TO 'hospital_app'@'localhost';
+GRANT ALL PRIVILEGES ON hmisphp.* TO 'hospital_app'@'127.0.0.1';
+FLUSH PRIVILEGES;"
+```
+
+Then set `DB_USERNAME=hospital_app` and `DB_PASSWORD=your-password` in
+`backend/.env` and run `php artisan migrate --seed`.
+
 **Profile photos:** uploaded photos are stored in
 `storage/app/public/users/` and served via the public disk — run
 `php artisan storage:link` once after setup so `/storage/...` resolves.
+
+**Backups:** dump the database regularly —
+
+```bash
+mysqldump --no-tablespaces -u hospital_app -p hmisphp > backup_$(date +%F).sql
+```
+
+**Restoring:** `mysql -u hospital_app -p hmisphp < backup_2026-01-01.sql`
 
 ## Frontend setup
 
