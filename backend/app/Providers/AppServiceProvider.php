@@ -19,6 +19,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Behind a TLS-terminating proxy, generated links must be https.
+        if (config('app.force_https')) {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
     }
 }

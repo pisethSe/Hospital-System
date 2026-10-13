@@ -29,11 +29,11 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Public endpoints
-Route::post('login/admin', [AuthController::class, 'loginAdmin'])->middleware('throttle:20,1');
-Route::post('login/doctor', [AuthController::class, 'loginDoctor'])->middleware('throttle:20,1');
+Route::post('login/admin', [AuthController::class, 'loginAdmin'])->middleware('throttle:5,1');
+Route::post('login/doctor', [AuthController::class, 'loginDoctor'])->middleware('throttle:5,1');
 
 // Forgot password (legacy his_admin_pwd_reset.php is a public form)
-Route::post('password-resets', [PasswordResetController::class, 'store'])->middleware('throttle:10,1');
+Route::post('password-resets', [PasswordResetController::class, 'store'])->middleware('throttle:5,1');
 
 Route::middleware('auth:sanctum')->group(function () {
     // Session info

@@ -7,6 +7,7 @@ use App\Models\Doctor;
 use App\Support\HisPassword;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
@@ -137,7 +138,7 @@ class AuthController extends Controller
     public function updatePassword(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'password' => ['required', 'string', 'min:3'],
+            'password' => ['required', 'string', Password::min(8)->letters()->numbers()],
         ]);
 
         $user = $request->user();

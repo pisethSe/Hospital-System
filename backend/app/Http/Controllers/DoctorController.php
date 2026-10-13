@@ -7,6 +7,7 @@ use App\Support\HisCode;
 use App\Support\HisPassword;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rules\Password;
 
 class DoctorController extends Controller
 {
@@ -51,7 +52,7 @@ class DoctorController extends Controller
             'doc_dept' => ['nullable', 'string', 'max:200'],
             'doc_dpic' => ['nullable', 'string', 'max:200'],
             'doc_number' => ['nullable', 'string', 'max:200'],
-            'password' => ['required', 'string', 'min:3'],
+            'password' => ['required', 'string', Password::min(8)->letters()->numbers()],
         ]);
 
         $doctor = Doctor::create([
@@ -84,7 +85,7 @@ class DoctorController extends Controller
             'doc_dept' => ['sometimes', 'nullable', 'string', 'max:200'],
             'doc_dpic' => ['sometimes', 'nullable', 'string', 'max:200'],
             'doc_number' => ['sometimes', 'string', 'max:200'],
-            'password' => ['sometimes', 'nullable', 'string', 'min:3'],
+            'password' => ['sometimes', 'nullable', 'string', Password::min(8)->letters()->numbers()],
         ]);
 
         if (array_key_exists('password', $data)) {

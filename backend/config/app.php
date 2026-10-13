@@ -29,4 +29,12 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    // Force https:// on generated URLs when the app runs behind a
+    // TLS-terminating proxy or load balancer (APP_FORCE_HTTPS=true).
+    'force_https' => env('APP_FORCE_HTTPS', false),
+
+    // Minimum length for new/changed passwords. The legacy sha1(md5())
+    // hashing of stored passwords is untouched.
+    'password_min_length' => 8,
+
 ];

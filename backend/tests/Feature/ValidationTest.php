@@ -67,7 +67,28 @@ class ValidationTest extends TestCase
                 'doc_fname' => 'Short',
                 'doc_lname' => 'Password',
                 'doc_number' => 'sp1',
-                'password' => 'ab', // min:3
+                'password' => 'ab', // min:8 + letters + numbers
+            ])
+            ->assertStatus(422);
+    }
+
+    public function test_new_passwords_need_letters_and_numbers(): void
+    {
+        $this->withToken($this->adminToken())
+            ->postJson('/api/doctors', [
+                'doc_fname' => 'No',
+                'doc_lname' => 'Numbers',
+                'doc_number' => 'nn1',
+                'password' => 'onlyletters',
+            ])
+            ->assertStatus(422);
+
+        $this->withToken($this->adminToken())
+            ->postJson('/api/doctors', [
+                'doc_fname' => 'No',
+                'doc_lname' => 'Letters',
+                'doc_number' => 'nn2',
+                'password' => '12345678',
             ])
             ->assertStatus(422);
     }

@@ -74,6 +74,29 @@ the whole API can be exercised locally with
 `DB_CONNECTION=sqlite php artisan serve` — no MySQL needed. Production
 stays on MySQL.
 
+## Production security
+
+- **APP_DEBUG=false** in production — error pages never leak stack traces.
+- **Dedicated database user** (`hospital_app`) scoped to the `hmisphp`
+  database only — the app never connects as root.
+- **Legacy password hashing preserved** (`sha1(md5())`) so existing
+  accounts keep working, but **all new/changed passwords must be at
+  least 8 characters with letters and numbers**.
+- **Brute-force protection**: sign-in and password-reset endpoints are
+  rate-limited to 5 attempts per minute.
+- **Password reset hardening**: the public reset endpoint never returns
+  the temporary password or token, and unknown emails are silently
+  ignored (no account enumeration). Approvals notify the staff member
+  by email (configure `MAIL_MAILER=smtp` + your server in `.env`;
+  the default `log` mailer writes emails to `storage/logs/laravel.log`).
+- **Token revocation**: changing a password or approving a reset
+  revokes all existing API tokens for the affected accounts.
+- **Security headers** on every response: `X-Frame-Options: DENY`,
+  `X-Content-Type-Options: nosniff`, `Referrer-Policy`,
+  `Permissions-Policy`.
+- **Force HTTPS** behind a TLS proxy: set `APP_FORCE_HTTPS=true`.
+- Secrets live only in `backend/.env` (gitignored, never committed).
+
 ## Production setup
 
 The shipped configuration runs in production mode (`APP_ENV=production`,

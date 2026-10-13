@@ -22,27 +22,49 @@ class PasswordResetTest extends TestCase
         ]);
     }
 
-    public function test_reset_request_is_public_and_uses_legacy_lengths(): void
+    public function test_reset_request_is_public_and_does_not_leak_secrets(): void
     {
+        // The request endpoint is public, but the response must never
+        // contain the temp password or token — anyone could otherwise
+        // fetch a would-be password for any email.
+        Doctor::create([
+            'doc_fname' => 'Reset',
+            'doc_lname' => 'Doc',
+            'doc_email' => 'reset.doc@hospital.com',
+            'doc_number' => 'rst1',
+            'doc_pwd' => HisPassword::hash('original123'),
+        ]);
+
         $response = $this->postJson('/api/password-resets', [
-            'email' => 'staff@hospital.com',
+            'email' => 'reset.doc@hospital.com',
         ]);
 
         $response->assertStatus(201)
-            ->assertJsonPath('message', 'Check your inbox for password reset instructions');
+            ->assertJsonPath('message', 'Your reset request has been submitted. The administrator will provide your new password.')
+            ->assertJsonMissing(['temp_password'])
+            ->assertJsonMissing(['token']);
 
-        // Legacy: 10-char temp password, 30-char token.
-        $this->assertSame(10, strlen($response->json('temp_password')));
-        $this->assertSame(30, strlen($response->json('token')));
-
-        // Legacy: the token is stored double-encrypted (sha1(md5(token))).
-        $reset = PwdReset::where('email', 'staff@hospital.com')->first();
+        $reset = PwdReset::where('email', 'reset.doc@hospital.com')->first();
         $this->assertNotNull($reset);
         $this->assertSame('Pending', $reset->status);
-        $this->assertSame(
-            sha1(md5($response->json('token'))),
-            $reset->token,
-        );
+
+        // Legacy lengths: 10-char temp password, 40-char sha1(md5(token)).
+        $this->assertSame(10, strlen($reset->pwd));
+        $this->assertSame(40, strlen($reset->token));
+    }
+
+    public function test_reset_request_for_unknown_email_creates_no_row(): void
+    {
+        // Anti-enumeration: the response is identical for unknown emails
+        // but no reset row is created.
+        $response = $this->postJson('/api/password-resets', [
+            'email' => 'nobody@hospital.com',
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonMissing(['temp_password']);
+
+        $this->assertDatabaseMissing('his_pwdresets', ['email' => 'nobody@hospital.com']);
     }
 
     public function test_admin_can_see_reset_requests(): void
