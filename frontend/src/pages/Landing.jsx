@@ -125,39 +125,149 @@ function VitalsStrip() {
  * The hero shows the product itself: a patient record with the vitals
  * strip and a lab panel — the objects hospital staff look at all day.
  */
-function ProductMock() {
+/*
+ * The dashboard preview in the hero: a miniature of the real app window.
+ * One orchestrated entrance — the window rises, the numbers count up,
+ * the weekly bars grow in sequence — then everything rests.
+ */
+function useCountUp(target, { duration = 1100, delay = 300 } = {}) {
+  // Reduced motion: start at the final value so no animation is needed.
+  const [value, setValue] = useState(() =>
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches ? target : 0,
+  )
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    let raf
+    const timer = setTimeout(() => {
+      const t0 = performance.now()
+      const tick = (now) => {
+        const p = Math.min((now - t0) / duration, 1)
+        setValue(Math.round(target * (1 - Math.pow(1 - p, 3))))
+        if (p < 1) raf = requestAnimationFrame(tick)
+      }
+      raf = requestAnimationFrame(tick)
+    }, delay)
+    return () => {
+      clearTimeout(timer)
+      cancelAnimationFrame(raf)
+    }
+  }, [target, duration, delay])
+
+  return value
+}
+
+const ADMISSIONS = [
+  ['Mon', 62], ['Tue', 45], ['Wed', 78], ['Thu', 55],
+  ['Fri', 84], ['Sat', 38], ['Sun', 66],
+]
+
+function DashboardPreview() {
+  const [grown, setGrown] = useState(false)
+  const patients = useCountUp(24)
+  const labTests = useCountUp(8)
+  const doctors = useCountUp(5)
+
+  useEffect(() => {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const timer = setTimeout(() => setGrown(true), reduced ? 0 : 500)
+    return () => clearTimeout(timer)
+  }, [])
+
+  const peak = Math.max(...ADMISSIONS.map(([, v]) => v))
+
   return (
-    <div className="w-full max-w-md rounded-xl border border-border bg-card shadow-sm">
-      <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
-        <div>
-          <p className="text-sm font-semibold text-foreground">Chan Dara</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">Inpatient · Ward 4, Room 12</p>
+    <div className="relative w-full max-w-md">
+      {/* One floating confirmation chip — the deliberate depth accent */}
+      <div className="absolute -right-3 -top-3.5 z-10 flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 shadow-sm animate-in fade-in-0 slide-in-from-top-2 duration-700">
+        <span className="flex size-4 items-center justify-center rounded-full bg-success/15 text-success">
+          <svg viewBox="0 0 16 16" fill="currentColor" className="size-2.5" aria-hidden="true">
+            <path d="M6.3 11.3 3.1 8.1l1.2-1.2 2 2 5.4-5.4 1.2 1.2z" />
+          </svg>
+        </span>
+        <span className="text-[11px] font-medium text-foreground">Discharge complete</span>
+      </div>
+
+      {/* App window */}
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-xl shadow-foreground/5 animate-in fade-in-0 slide-in-from-bottom-6 duration-700">
+        {/* Window chrome */}
+        <div className="flex items-center justify-between border-b border-border bg-muted/50 px-4 py-2.5">
+          <div className="flex items-center gap-2.5">
+            <span className="flex gap-1" aria-hidden="true">
+              <span className="size-2 rounded-full bg-border" />
+              <span className="size-2 rounded-full bg-border" />
+              <span className="size-2 rounded-full bg-border" />
+            </span>
+            <span className="text-xs font-semibold text-foreground">Hospital System</span>
+          </div>
+          <span className="flex items-center gap-1.5 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
+            <span className="relative flex size-1.5">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-60" />
+              <span className="relative inline-flex size-1.5 rounded-full bg-success" />
+            </span>
+            Live
+          </span>
         </div>
-        <RecordCode value="7EW0L" />
-      </div>
-      <div className="px-5 py-4">
-        <VitalsStrip />
-      </div>
-      <div className="border-t border-border px-5 py-3.5">
-        <p className="text-xs font-medium text-muted-foreground">Latest lab panel</p>
-        <div className="mt-2.5 flex items-center justify-between gap-3">
+
+        {/* Stat tiles — numbers count up */}
+        <div className="grid grid-cols-3 divide-x divide-border border-b border-border">
+          {[
+            ['Patients', patients],
+            ['Lab tests', labTests],
+            ['Doctors', doctors],
+          ].map(([label, value]) => (
+            <div key={label} className="px-4 py-3">
+              <p className="text-[10px] font-medium text-muted-foreground">{label}</p>
+              <p className="mt-0.5 text-lg font-semibold tabular-nums text-foreground">{value}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Patient record + vitals */}
+        <div className="border-b border-border px-4 py-3.5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Chan Dara</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">Inpatient · Ward 4, Room 12</p>
+            </div>
+            <RecordCode value="7EW0L" />
+          </div>
+          <div className="mt-3">
+            <VitalsStrip />
+          </div>
+        </div>
+
+        {/* Weekly admissions — bars grow in sequence */}
+        <div className="border-b border-border px-4 py-3.5">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium text-muted-foreground">Admissions this week</p>
+            <span className="text-[10px] font-medium text-muted-foreground tabular-nums">peak {peak}</span>
+          </div>
+          <div className="mt-2.5 flex h-16 items-end gap-1.5" aria-hidden="true">
+            {ADMISSIONS.map(([day, value], i) => (
+              <div key={day} className="flex flex-1 flex-col items-center gap-1">
+                <div
+                  className={`w-full rounded-sm bg-primary/70 ${i === 4 ? 'bg-primary' : ''}`}
+                  style={{
+                    height: grown ? `${value}%` : '6%',
+                    transition: 'height 700ms cubic-bezier(0.22, 1, 0.36, 1)',
+                    transitionDelay: `${i * 60}ms`,
+                  }}
+                />
+                <span className="text-[9px] text-muted-foreground">{day}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Latest lab panel */}
+        <div className="flex items-center justify-between gap-3 px-4 py-3.5">
           <div>
             <p className="text-sm font-medium text-foreground">Complete blood count</p>
             <p className="mt-0.5 text-xs text-muted-foreground">Taken today, 09:15</p>
           </div>
           <Badge variant="outline" className="border-success/25 text-success">
             Results in
-          </Badge>
-        </div>
-      </div>
-      <div className="border-t border-border px-5 py-3.5">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium text-foreground">Paracetamol 500 mg</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">1 tablet, every 6 hours</p>
-          </div>
-          <Badge variant="outline" className="border-warning/30 text-warning">
-            Pending
           </Badge>
         </div>
       </div>
@@ -205,7 +315,7 @@ export default function Landing() {
             </div>
           </div>
           <div className="flex justify-center lg:justify-end">
-            <ProductMock />
+            <DashboardPreview />
           </div>
         </div>
       </section>
