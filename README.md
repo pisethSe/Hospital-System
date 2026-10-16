@@ -130,6 +130,51 @@ mysqldump --no-tablespaces -u hospital_app -p hmisphp > backup_$(date +%F).sql
 
 **Restoring:** `mysql -u hospital_app -p hmisphp < backup_2026-01-01.sql`
 
+## Deploying to Render
+
+The repository ships a **Render Blueprint** (`render.yaml`) that deploys
+all three services at once:
+
+| Service | Type | What it runs |
+| --- | --- | --- |
+| `hospital-mysql` | private service (Docker) | MySQL 8.4 with a 1 GB persistent disk — reachable only by the API |
+| `hospital-api` | web service (Docker) | Laravel 12 on PHP 8.3-Apache (`backend/Dockerfile`), 1 GB disk for uploads/logs, auto-migrates on deploy |
+| `hospital-web` | static site | the built React app (`frontend/dist`), SPA fallback routing included |
+
+### One-time setup
+
+1. Push this repository to GitHub.
+2. In Render: **New → Blueprint** → select the repository → Render reads
+   `render.yaml`.
+3. Render prompts for the secret values (marked *sync: false*). Enter:
+   - `MYSQL_ROOT_PASSWORD`, `MYSQL_PASSWORD` — pick strong passwords
+   - `APP_KEY` — a 32-byte base64 key, e.g.
+     `php -r "echo 'base64:'.base64_encode(random_bytes(32));"`
+   - `DB_USERNAME` — `hospital_app`
+   - `DB_PASSWORD` — the same value as `MYSQL_PASSWORD`
+4. Deploy. On boot the API container waits for MySQL, runs migrations,
+   seeds the demo accounts (only when the database is empty), caches
+   config, links storage and starts Apache on Render's assigned port.
+
+### How the pieces connect
+
+- The frontend is built with `VITE_API_URL` = the API's Render URL, so
+  it calls the API across origins (CORS already allows it via
+  `FRONTEND_URL`, which the blueprint sets from the API's URL).
+- Uploaded profile photos are served by the API at `/storage/...` and
+  stored on the API's persistent disk.
+- MySQL lives on the private network — it is never exposed publicly.
+
+### Production checklist
+
+- All secrets (`APP_KEY`, DB passwords) are set in the Render
+  dashboard — never in the repository.
+- Verify: open the `hospital-web` URL, sign in as
+  `admin@hospital.com` / `admin123`, then **change the demo passwords
+  immediately**.
+- Backups: use Render's disk snapshots, or run the API container's
+  shell: `mysqldump --no-tablespaces -u hospital_app -p hmisphp`.
+
 ## Frontend setup
 
 ```bash

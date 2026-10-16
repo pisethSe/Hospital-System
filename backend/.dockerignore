@@ -1,0 +1,18 @@
+# Never bake local secrets or environment-specific files into the image
+.env
+.env.backup
+.env.production
+
+# Local runtime state (recreated at container start)
+storage/
+bootstrap/cache/
+
+# Local-only directories
+node_modules
+.git
+.idea
+.vscode
+
+# Tests are not needed in the production image
+tests
+phpunit.xml

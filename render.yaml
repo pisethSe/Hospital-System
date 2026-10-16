@@ -1,0 +1,102 @@
+# Render Blueprint — deploys the whole Hospital System:
+#   hospital-mysql : private MySQL 8.4 service with persistent disk
+#   hospital-api   : Laravel API (Docker) on the public internet
+#   hospital-web   : React static site
+#
+# Deploy: Render Dashboard -> New -> Blueprint -> point at this repository.
+#
+# Secrets (APP_KEY, MYSQL_* passwords) are marked `sync: false` — Render
+# will prompt you to enter them once in the dashboard. They are never
+# stored in this repository.
+
+services:
+  # ------------------------------------------------------------------ #
+  # Private MySQL 8.4 — reachable only by the API on the private network
+  # ------------------------------------------------------------------ #
+  - type: pserv
+    name: hospital-mysql
+    runtime: image
+    image:
+      url: docker.io/library/mysql:8.4
+    plan: starter
+    disk:
+      name: mysql-data
+      mountPath: /var/lib/mysql
+      sizeGB: 1
+    envVars:
+      - key: MYSQL_DATABASE
+        value: hmisphp
+      - key: MYSQL_USER
+        value: hospital_app
+      - key: MYSQL_PASSWORD
+        sync: false
+      - key: MYSQL_ROOT_PASSWORD
+        sync: false
+
+  # ------------------------------------------------------------------ #
+  # Laravel API (Docker container, public)
+  # ------------------------------------------------------------------ #
+  - type: web
+    name: hospital-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: starter
+    healthCheckPath: /up
+    disk:
+      name: api-storage
+      mountPath: /var/www/html/storage
+      sizeGB: 1
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_FORCE_HTTPS
+        value: "true"
+      - key: APP_KEY
+        sync: false
+      - key: DB_HOST
+        fromService:
+          name: hospital-mysql
+          type: pserv
+          property: host
+      - key: DB_PORT
+        value: "3306"
+      - key: DB_DATABASE
+        value: hmisphp
+      - key: DB_USERNAME
+        fromService:
+          name: hospital-mysql
+          type: envVarKey
+          property: MYSQL_USER
+      - key: DB_PASSWORD
+        fromService:
+          name: hospital-mysql
+          type: envVarKey
+          property: MYSQL_PASSWORD
+      - key: FRONTEND_URL
+        fromService:
+          name: hospital-web
+          type: url
+      - key: MAIL_MAILER
+        value: log
+
+  # ------------------------------------------------------------------ #
+  # React frontend (static site)
+  # ------------------------------------------------------------------ #
+  - type: web
+    name: hospital-web
+    runtime: static
+    buildCommand: cd frontend && npm install && npm run build
+    publishPath: frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: hospital-api
+          type: url
+    routes:
+      # SPA fallback — deep links like /admin/patients load index.html
+      - type: rewrite
+        source: /*
+        destination: /index.html

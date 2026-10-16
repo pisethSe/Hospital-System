@@ -13,6 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Render's proxy terminates TLS and forwards traffic — trust its
+        // headers so request IPs and https detection are correct.
+        $middleware->trustProxies(at: '*');
+
         $middleware->append(\App\Http\Middleware\AddSecurityHeaders::class);
 
         $middleware->alias([

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import api from '@/api/client'
 import { PageHeader, errorMessage } from '@/components/ui'
+import { storageUrl } from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field'
@@ -118,7 +119,7 @@ export default function Profile() {
           <CardContent>
             <div className="flex items-center gap-4 pb-5">
               <Avatar className="size-14">
-                {avatar && <img src={`/storage/${avatar}`} alt="Profile photo" className="size-full object-cover" />}
+                {avatar && <img src={storageUrl(avatar)} alt="Profile photo" className="size-full object-cover" />}
                 {!avatar && <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">{initials}</AvatarFallback>}
               </Avatar>
               <div>
