@@ -22,8 +22,13 @@ return [
             'strict' => true,
             'engine' => 'InnoDB',
             'options' => extension_loaded('pdo_mysql') ? array_filter([
+                // External managed MySQL providers (e.g. Aiven) require TLS.
+                // Set MYSQL_ATTR_SSL_CA to a CA bundle path to verify the
+                // server certificate, or MYSQL_SSL_VERIFY=false to encrypt
+                // without verification (no CA file needed).
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
+                PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => env('MYSQL_SSL_VERIFY', true),
+            ], fn ($value) => $value !== null) : [],
         ],
 
         // Local testing without MySQL: run with DB_CONNECTION=sqlite
