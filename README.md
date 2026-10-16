@@ -138,7 +138,7 @@ all three services at once:
 | Service | Type | What it runs |
 | --- | --- | --- |
 | `hospital-mysql` | private service (Docker) | MySQL 8.4 with a 1 GB persistent disk — reachable only by the API |
-| `hospital-api` | web service (Docker) | Laravel 12 on PHP 8.3-Apache (`backend/Dockerfile`), 1 GB disk for uploads/logs, auto-migrates on deploy |
+| `hospital-api` | web service (Docker) | Laravel 12 on PHP 8.4-Apache (`backend/Dockerfile`), 1 GB disk for uploads/logs, auto-migrates on deploy |
 | `hospital-web` | static site | the built React app (`frontend/dist`), SPA fallback routing included |
 
 ### One-time setup

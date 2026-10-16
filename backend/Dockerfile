@@ -1,5 +1,7 @@
-# Hospital System API — production image (PHP 8.3 + Apache)
-FROM php:8.3-apache
+# Hospital System API — production image (PHP 8.4 + Apache)
+# PHP 8.4 matches the toolchain the app is developed and tested with
+# (the composer.lock contains packages requiring PHP >= 8.4).
+FROM php:8.4-apache
 
 # System packages + PHP extensions Laravel and this app need
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -37,8 +39,16 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progre
 # Application source (backend/.dockerignore keeps .env and local files out)
 COPY . .
 
-# Runtime permissions
-RUN chown -R www-data:www-data storage bootstrap/cache \
+# Runtime permissions (storage/ is dockerignored, so create the
+# directories the start script also recreates at container boot)
+RUN mkdir -p \
+        storage/framework/cache/data \
+        storage/framework/sessions \
+        storage/framework/views \
+        storage/logs \
+        storage/app/public/users \
+        bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache \
     && chmod +x docker/start.sh
 
 EXPOSE 80
