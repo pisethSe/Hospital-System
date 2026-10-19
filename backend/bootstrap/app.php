@@ -19,10 +19,23 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->append(\App\Http\Middleware\AddSecurityHeaders::class);
 
+        // This is an API-only application: there is no web "login" route.
+        // Returning null prevents Laravel's Authenticate middleware from
+        // resolving route('login') for guests (which throws a 500); the
+        // AuthenticationException is then rendered as JSON 401 below.
+        $middleware->redirectGuestsTo(fn () => null);
+
         $middleware->alias([
             'role' => EnsureRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // API routes must always render JSON errors — e.g. HTTP 401 for
+        // unauthenticated requests — even when the client omits the
+        // Accept: application/json header. Without this, Laravel tries
+        // to redirect guests to a web "login" route that does not exist
+        // in this API-only application and returns a 500 instead.
+        $exceptions->shouldRenderJsonWhen(
+            fn ($request) => $request->is('api/*') || $request->expectsJson(),
+        );
     })->create();

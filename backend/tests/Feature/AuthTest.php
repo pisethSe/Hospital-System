@@ -74,6 +74,14 @@ class AuthTest extends TestCase
         $this->getJson('/api/me')->assertStatus(401);
     }
 
+    public function test_protected_api_routes_return_401_json_even_without_accept_header(): void
+    {
+        // Regression: without Accept: application/json the request used to
+        // hit Laravel's guest redirect (route "login" does not exist in
+        // this API-only app) and fail with a 500 instead of a clean 401.
+        $this->get('/api/patients')->assertStatus(401)->assertHeader('Content-Type', 'application/json');
+    }
+
     public function test_me_returns_authenticated_profile(): void
     {
         $admin = Admin::create([
